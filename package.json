@@ -1,0 +1,12 @@
+{
+  "name": "focusflow-widget",
+  "version": "1.0.0",
+  "description": "ADHD Focus Widget for macOS",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^28.3.3"
+  }
+}

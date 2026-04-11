@@ -3,7 +3,7 @@ const path = require('path');
 
 let win;
 
-app.whenReady().then(() => {
+function createWindow() {
   win = new BrowserWindow({
     width: 370,
     height: 640,
@@ -13,7 +13,7 @@ app.whenReady().then(() => {
     transparent: true,
     vibrancy: 'under-window',
     visualEffectState: 'active',
-    alwaysOnTop: true,
+    alwaysOnTop: false,
     hasShadow: true,
     resizable: true,
     webPreferences: {
@@ -24,7 +24,9 @@ app.whenReady().then(() => {
   });
 
   win.loadFile('index.html');
-});
+}
+
+app.whenReady().then(createWindow);
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
@@ -34,6 +36,6 @@ app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });
 
-ipcMain.on('close',    () => win.close());
-ipcMain.on('minimize', () => win.minimize());
-ipcMain.on('pin',      (_, v) => win.setAlwaysOnTop(v));
+ipcMain.on('close',    () => { if (win && !win.isDestroyed()) win.close(); });
+ipcMain.on('minimize', () => { if (win && !win.isDestroyed()) win.minimize(); });
+ipcMain.on('pin',      (_, v) => { if (win && !win.isDestroyed()) win.setAlwaysOnTop(!!v); });

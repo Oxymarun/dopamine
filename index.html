@@ -1298,6 +1298,17 @@
       </div>
       <button class="toggle-btn" id="tog-autoStart" onclick="toggleSetting('autoStart')">Off</button>
     </div>
+    <div class="setting-row">
+      <div class="setting-info">
+        <span class="setting-label">Your Data</span>
+        <span class="setting-sub">Backup or restore everything as JSON</span>
+      </div>
+      <div style="display:flex;gap:4px">
+        <button class="toggle-btn" onclick="exportData()">Export</button>
+        <button class="toggle-btn" onclick="document.getElementById('import-file').click()">Import</button>
+        <input type="file" id="import-file" accept="application/json,.json" style="display:none" onchange="importData(event)">
+      </div>
+    </div>
   </div>
 
 </div><!-- /shell -->
@@ -1345,10 +1356,19 @@ let state = {
 };
 
 function loadState() {
+  const raw = localStorage.getItem('ff_state');
+  if (!raw) return;
+  let saved;
   try {
-    const raw = localStorage.getItem('ff_state');
-    if (raw) {
-      const saved = JSON.parse(raw);
+    saved = JSON.parse(raw);
+  } catch (e) {
+    // Back up the corrupt blob so the user isn't silently wiped
+    try { localStorage.setItem('ff_state_corrupt_backup', raw); } catch (ignore) {}
+    setTimeout(() => showToast('⚠ Saved data was corrupt — starting fresh (backup kept)'), 500);
+    return;
+  }
+  try {
+    if (saved && typeof saved === 'object') {
       Object.keys(saved).forEach(k => { state[k] = saved[k]; });
       if (!Array.isArray(state.goals) || state.goals.length < 3) state.goals = ['','',''];
       if (!Array.isArray(state.completedDates)) state.completedDates = [];
@@ -1482,7 +1502,7 @@ function resetTimer() {
 
 function snoozeTimer() {
   timerSec += 600;
-  timerTotal += 600;
+  if (timerSec > timerTotal) timerTotal = timerSec;
   updatePie();
   updateTimerDisplay();
 }
@@ -1567,14 +1587,22 @@ function setWork(m) {
   state.settings.workMin = m;
   save();
   document.querySelectorAll('#work-btns .iv-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.val) === m));
-  if (!timerRunning && timerMode === 'focus') { timerSec = m*60; timerTotal = timerSec; updatePie(); updateTimerDisplay(); }
+  if (!timerRunning && timerMode === 'focus') {
+    timerSec = m*60; timerTotal = timerSec; updatePie(); updateTimerDisplay();
+  } else if (timerRunning) {
+    showToast(`Work set to ${m}m — applies next session`);
+  }
 }
 
 function setBreak(m) {
   state.settings.breakMin = m;
   save();
   document.querySelectorAll('#break-btns .iv-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.val) === m));
-  if (!timerRunning && timerMode !== 'focus') { timerSec = m*60; timerTotal = timerSec; updatePie(); updateTimerDisplay(); }
+  if (!timerRunning && timerMode !== 'focus') {
+    timerSec = m*60; timerTotal = timerSec; updatePie(); updateTimerDisplay();
+  } else if (timerRunning) {
+    showToast(`Break set to ${m}m — applies next session`);
+  }
 }
 
 function toggleMode() {
@@ -1616,10 +1644,12 @@ setInterval(updateClock, 1000);
 function genId() { return '_' + Math.random().toString(36).slice(2,9); }
 
 function addTask(text, effort) {
-  if (!text.trim()) return;
-  state.tasks.unshift({ id: genId(), text: text.trim(), effort: effort||'med', done: false, ge: false, steps: [], expanded: false });
+  if (!text.trim()) return null;
+  const task = { id: genId(), text: text.trim(), effort: effort||'med', done: false, ge: false, steps: [], expanded: false };
+  state.tasks.unshift(task);
   save();
   renderTasks();
+  return task;
 }
 
 function effortClass(e) { return ({tiny:'effort-tiny',small:'effort-small',med:'effort-med',big:'effort-big'})[e]||'effort-med'; }
@@ -1770,17 +1800,23 @@ function completeTask(id, ge) {
 function markDoneActive() {
   const nowText = document.getElementById('now-task').textContent.trim();
   if (!nowText) { showToast('✏️ Set a task first'); return; }
-  const task = state.tasks.find(t=>t.text===nowText && !t.done && !t.ge);
-  if (task) { completeTask(task.id, false); setTimeout(()=>showTransition(nowText),500); return; }
-  addTask(nowText,'med'); setTimeout(()=>{ const t2=state.tasks.find(t=>t.text===nowText&&!t.done&&!t.ge); if(t2){ completeTask(t2.id,false); setTimeout(()=>showTransition(nowText),500); } },30);
+  let task = state.tasks.find(t => t.text === nowText && !t.done && !t.ge);
+  if (!task) task = addTask(nowText, 'med');
+  if (task) {
+    completeTask(task.id, false);
+    setTimeout(() => showTransition(nowText), 500);
+  }
 }
 
 function markGEActive() {
   const nowText = document.getElementById('now-task').textContent.trim();
   if (!nowText) { showToast('✏️ Set a task first'); return; }
-  const task = state.tasks.find(t=>t.text===nowText && !t.done && !t.ge);
-  if (task) { completeTask(task.id, true); setTimeout(()=>showTransition(nowText),500); return; }
-  addTask(nowText,'med'); setTimeout(()=>{ const t2=state.tasks.find(t=>t.text===nowText&&!t.done&&!t.ge); if(t2){ completeTask(t2.id,true); setTimeout(()=>showTransition(nowText),500); } },30);
+  let task = state.tasks.find(t => t.text === nowText && !t.done && !t.ge);
+  if (!task) task = addTask(nowText, 'med');
+  if (task) {
+    completeTask(task.id, true);
+    setTimeout(() => showTransition(nowText), 500);
+  }
 }
 
 function handleTaskInput(e) {
@@ -1954,42 +1990,71 @@ function updateStats() {
   document.getElementById('xp-curr').textContent = state.xp+' XP';
   document.getElementById('xp-next').textContent = 'next: '+info.nextXp+' XP';
 
-  // Daily summary grid
+  // Daily summary grid — DOM-built to avoid innerHTML interpolation of imported data
   const dsGrid = document.getElementById('ds-grid');
-  dsGrid.innerHTML = `
-    <div class="ds-item"><div class="ds-big ds-done">${state.todayDone}</div><div class="ds-label">Done</div></div>
-    <div class="ds-item"><div class="ds-big" style="color:#a78bfa">${state.todayGE}</div><div class="ds-label">Good Enough</div></div>
-    <div class="ds-item"><div class="ds-big ds-pomo">${state.todayPomos}</div><div class="ds-label">Pomos</div></div>
-    <div class="ds-item"><div class="ds-big ds-focus">${state.todayFocusMin}m</div><div class="ds-label">Focus Time</div></div>
-    <div class="ds-item"><div class="ds-big" style="color:var(--accent)">${state.todayXP}</div><div class="ds-label">XP Earned</div></div>
-    <div class="ds-item"><div class="ds-big">${state.moodHistory[localDateStr(new Date())]||'—'}</div><div class="ds-label">Mood</div></div>
-  `;
+  dsGrid.textContent = '';
+  const makeDsItem = (big, label, bigCls, bigStyle) => {
+    const item = document.createElement('div'); item.className = 'ds-item';
+    const bigEl = document.createElement('div');
+    bigEl.className = 'ds-big' + (bigCls ? ' ' + bigCls : '');
+    if (bigStyle) bigEl.style.cssText = bigStyle;
+    bigEl.textContent = big;
+    const lbl = document.createElement('div'); lbl.className = 'ds-label'; lbl.textContent = label;
+    item.append(bigEl, lbl);
+    return item;
+  };
+  const todayKey = localDateStr(new Date());
+  dsGrid.append(
+    makeDsItem(state.todayDone, 'Done', 'ds-done'),
+    makeDsItem(state.todayGE, 'Good Enough', '', 'color:#a78bfa'),
+    makeDsItem(state.todayPomos, 'Pomos', 'ds-pomo'),
+    makeDsItem(`${state.todayFocusMin}m`, 'Focus Time', 'ds-focus'),
+    makeDsItem(state.todayXP, 'XP Earned', '', 'color:var(--accent)'),
+    makeDsItem(state.moodHistory[todayKey] || '—', 'Mood'),
+  );
 
   // Weekly charts
   renderWeeklyCharts();
 
   // Mood week
   const moodWrap = document.getElementById('mood-week');
-  moodWrap.innerHTML = '';
+  moodWrap.textContent = '';
   for (let i=6; i>=0; i--) {
     const d = new Date(); d.setDate(d.getDate()-i);
     const key = localDateStr(d);
     const day = d.toLocaleDateString('en',{weekday:'short'});
     const mood = state.moodHistory[key]||'—';
     const el = document.createElement('div'); el.className='mood-day';
-    el.innerHTML = `<span class="mood-day-emoji">${mood}</span><span class="mood-day-label">${day}</span>`;
+    const emoji = document.createElement('span');
+    emoji.className = 'mood-day-emoji';
+    emoji.textContent = mood;
+    const lbl = document.createElement('span');
+    lbl.className = 'mood-day-label';
+    lbl.textContent = day;
+    el.append(emoji, lbl);
     moodWrap.appendChild(el);
   }
 
   // Wall of wins
   const wow = document.getElementById('wall-of-wins');
-  wow.innerHTML = '';
+  wow.textContent = '';
   state.wins.slice(0,15).forEach(w => {
     const el = document.createElement('div'); el.className='win-item';
     const t = new Date(w.time);
     const timeStr = t.toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit',hour12:true});
-    const prefix = w.ge ? '👍 ' : '✓ ';
-    el.innerHTML = `<span class="win-text">${prefix}${escHtml(w.text)}</span><span class="win-time">${timeStr}</span>${w.ge?'<span class="win-ge">shipped</span>':''}`;
+    const textSpan = document.createElement('span');
+    textSpan.className = 'win-text';
+    textSpan.textContent = (w.ge ? '👍 ' : '✓ ') + w.text;
+    const timeSpan = document.createElement('span');
+    timeSpan.className = 'win-time';
+    timeSpan.textContent = timeStr;
+    el.append(textSpan, timeSpan);
+    if (w.ge) {
+      const geSpan = document.createElement('span');
+      geSpan.className = 'win-ge';
+      geSpan.textContent = 'shipped';
+      el.appendChild(geSpan);
+    }
     wow.appendChild(el);
   });
 }
@@ -2019,17 +2084,26 @@ function getWeekData() {
 
 function renderBarChart(containerId, days, valueFn, color) {
   const el = document.getElementById(containerId);
+  el.textContent = '';
   const maxVal = Math.max(1, ...days.map(valueFn));
-  el.innerHTML = days.map(d => {
+  days.forEach(d => {
     const val = valueFn(d);
     const h = Math.max(2, (val / maxVal) * 36);
-    const cls = d.isToday ? ' today' : '';
-    return `<div class="chart-col${cls}">
-      <span class="chart-val">${val||''}</span>
-      <div class="chart-bar" style="height:${h}px;background:${color}"></div>
-      <span class="chart-label">${d.label}</span>
-    </div>`;
-  }).join('');
+    const col = document.createElement('div');
+    col.className = 'chart-col' + (d.isToday ? ' today' : '');
+    const valEl = document.createElement('span');
+    valEl.className = 'chart-val';
+    valEl.textContent = val || '';
+    const bar = document.createElement('div');
+    bar.className = 'chart-bar';
+    bar.style.height = `${h}px`;
+    bar.style.background = color;
+    const lbl = document.createElement('span');
+    lbl.className = 'chart-label';
+    lbl.textContent = d.label;
+    col.append(valEl, bar, lbl);
+    el.appendChild(col);
+  });
 }
 
 function renderWeeklyCharts() {
@@ -2059,6 +2133,28 @@ function saveDailySnapshot(dateStr) {
   const keys = Object.keys(state.dailyHistory).sort();
   while (keys.length > 30) { delete state.dailyHistory[keys.shift()]; }
   save();
+}
+
+// Checks if the local date has rolled over and rolls counters if so.
+// Called at init AND on a one-minute interval so a widget left open
+// across midnight still snapshots and resets cleanly.
+function checkDayRollover() {
+  const today = localDateStr(new Date());
+  if (state.lastResetDate && state.lastResetDate !== today) {
+    saveDailySnapshot(state.lastResetDate);
+    state.todayDone = 0; state.todayGE = 0; state.todayPomos = 0;
+    state.todayXP = 0; state.todayFocusMin = 0;
+    state.lastResetDate = today;
+    save();
+    calculateStreak();
+    updateHeaderBadges();
+    updateStats();
+    return true;
+  } else if (!state.lastResetDate) {
+    state.lastResetDate = today;
+    save();
+  }
+  return false;
 }
 
 // =====================================================================
@@ -2102,6 +2198,63 @@ function restoreSettings() {
       btn.classList.toggle('on', state.settings[key]);
     }
   });
+}
+
+// =====================================================================
+// DATA EXPORT / IMPORT
+// =====================================================================
+function exportData() {
+  try {
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const ts = localDateStr(new Date());
+    a.href = url; a.download = `focusflow-backup-${ts}.json`;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('📦 Backup downloaded');
+  } catch (err) { showToast('⚠ Export failed'); }
+}
+
+function importData(evt) {
+  const file = evt.target.files && evt.target.files[0];
+  evt.target.value = ''; // so picking the same file twice still fires change
+  if (!file) return;
+  if (!confirm('Importing will REPLACE all current data. Continue?')) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const parsed = JSON.parse(reader.result);
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        showToast('⚠ Invalid backup file'); return;
+      }
+      // Must have ALL core keys to look like a real FocusFlow backup
+      if (!('tasks' in parsed) || !('settings' in parsed) || !('xp' in parsed)) {
+        showToast('⚠ This does not look like a FocusFlow backup'); return;
+      }
+      // Sanitize IDs on objects that end up in DOM handlers — rebuild them
+      // so nothing from an imported file can escape into code paths we trust.
+      const sanitizeItems = (arr) => {
+        if (!Array.isArray(arr)) return [];
+        return arr.map(item => {
+          if (!item || typeof item !== 'object') return null;
+          return { ...item, id: genId() };
+        }).filter(Boolean);
+      };
+      if (parsed.tasks)   parsed.tasks   = sanitizeItems(parsed.tasks);
+      if (parsed.dumps)   parsed.dumps   = sanitizeItems(parsed.dumps);
+      if (parsed.rewards) parsed.rewards = sanitizeItems(parsed.rewards);
+
+      localStorage.setItem('ff_state', JSON.stringify(parsed));
+      showToast('✅ Imported — reloading…');
+      setTimeout(() => location.reload(), 800);
+    } catch (e) {
+      showToast('⚠ Could not parse backup file');
+    }
+  };
+  reader.onerror = () => showToast('⚠ Could not read file');
+  reader.readAsText(file);
 }
 
 function escHtml(s) {
@@ -2399,6 +2552,13 @@ function handleYT(e) {
   const url = e.target.value.trim(); if(!url) return;
   const m = url.match(/[?&]v=([^&]+)/) || url.match(/youtu\.be\/([^?]+)/);
   if (!m) { showToast('⚠ Could not parse YouTube URL'); return; }
+  const videoId = m[1];
+  // YouTube IDs are strictly [A-Za-z0-9_-], 11 chars. Reject anything else to
+  // prevent URL injection into the iframe src.
+  if (!/^[A-Za-z0-9_-]{11}$/.test(videoId)) {
+    showToast('⚠ Invalid YouTube video ID');
+    return;
+  }
   stopSound();
   // open in iframe (hidden, audio only)
   let fr = document.getElementById('_ytfr');
@@ -2407,7 +2567,7 @@ function handleYT(e) {
     fr.setAttribute('allow','autoplay; encrypted-media'); fr.allowFullscreen=true;
     document.body.appendChild(fr);
   }
-  fr.src = `https://www.youtube.com/embed/${m[1]}?autoplay=1&enablejsapi=1`;
+  fr.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1`;
 }
 
 // =====================================================================
@@ -2502,7 +2662,13 @@ function showLevelUp(level) {
 function showToast(msg, duration=4000) {
   const wrap = document.getElementById('toast-wrap');
   const t = document.createElement('div'); t.className='toast';
-  t.innerHTML = `<span>${msg}</span><button class="toast-dismiss" onclick="this.parentElement.remove()">✕</button>`;
+  const span = document.createElement('span');
+  span.textContent = msg;
+  const btn = document.createElement('button');
+  btn.className = 'toast-dismiss';
+  btn.textContent = '✕';
+  btn.onclick = () => t.remove();
+  t.append(span, btn);
   wrap.appendChild(t);
   setTimeout(()=>{ if(t.parentElement) t.remove(); }, duration);
 }
@@ -2512,8 +2678,14 @@ function showToast(msg, duration=4000) {
 // =====================================================================
 function showHyperfocusAlert() {
   const mins = consecutivePomos * state.settings.workMin;
-  document.getElementById('hf-msg').innerHTML =
-    `You've been locked in for <strong>${mins} minutes</strong> straight.<br>Your body needs attention.`;
+  const el = document.getElementById('hf-msg');
+  el.textContent = '';
+  el.append("You've been locked in for ");
+  const strong = document.createElement('strong');
+  strong.textContent = `${mins} minutes`;
+  el.append(strong, ' straight.');
+  el.appendChild(document.createElement('br'));
+  el.append('Your body needs attention.');
   openOverlay('ov-hyperfocus');
 }
 
@@ -2586,12 +2758,27 @@ function renderRewards() {
   state.rewards.forEach(r => {
     const el = document.createElement('div'); el.className = 'reward-item';
     const canAfford = state.xp >= r.cost;
-    el.innerHTML = `
-      <span class="reward-name">${escHtml(r.name)}</span>
-      <span class="reward-cost">${r.cost} XP</span>
-      <button class="redeem-btn" onclick="redeemReward('${r.id}')" ${canAfford?'':'disabled'}>Redeem</button>
-      <button class="reward-rm" onclick="removeReward('${r.id}')">✕</button>
-    `;
+
+    const name = document.createElement('span');
+    name.className = 'reward-name';
+    name.textContent = r.name;
+
+    const cost = document.createElement('span');
+    cost.className = 'reward-cost';
+    cost.textContent = `${r.cost} XP`;
+
+    const redeem = document.createElement('button');
+    redeem.className = 'redeem-btn';
+    redeem.textContent = 'Redeem';
+    redeem.disabled = !canAfford;
+    redeem.onclick = () => redeemReward(r.id);
+
+    const rm = document.createElement('button');
+    rm.className = 'reward-rm';
+    rm.textContent = '✕';
+    rm.onclick = () => removeReward(r.id);
+
+    el.append(name, cost, redeem, rm);
     list.appendChild(el);
   });
 
@@ -2599,7 +2786,10 @@ function renderRewards() {
   if (!rList) return;
   rList.innerHTML = '';
   if (state.redeemed.length === 0) {
-    rList.innerHTML = '<div style="font-size:10px;color:var(--muted);padding:4px 0">No rewards redeemed yet</div>';
+    const empty = document.createElement('div');
+    empty.style.cssText = 'font-size:10px;color:var(--muted);padding:4px 0';
+    empty.textContent = 'No rewards redeemed yet';
+    rList.appendChild(empty);
     return;
   }
   state.redeemed.slice(0, 8).forEach(r => {
@@ -2823,18 +3013,9 @@ function init() {
   loadState();
   calculateStreak();
 
-  // Save previous day's snapshot and reset daily counters
+  // Save previous day's snapshot and reset daily counters if needed
+  checkDayRollover();
   const today = localDateStr(new Date());
-  if (state.lastResetDate && state.lastResetDate !== today) {
-    saveDailySnapshot(state.lastResetDate);
-    state.todayDone = 0; state.todayGE = 0; state.todayPomos = 0;
-    state.todayXP = 0; state.todayFocusMin = 0;
-    state.lastResetDate = today;
-    save();
-  } else if (!state.lastResetDate) {
-    state.lastResetDate = today;
-    save();
-  }
 
   // Restore work/break button highlights
   const wv = state.settings.workMin;
@@ -2862,8 +3043,9 @@ function init() {
   // Mode toggle label
   document.getElementById('mode-toggle-btn').textContent = '☕';
 
-  // Pin opacity
+  // Pin opacity + apply pinned state to the Electron window on startup
   document.getElementById('pin-btn').style.opacity = state.settings.pinned?'1':'0.5';
+  if (window.widget && state.settings.pinned) window.widget.pin(true);
 
   resizeCanvas();
   updatePuppy('idle');
@@ -2873,6 +3055,8 @@ function init() {
 }
 
 setInterval(updateNightMode, 60000);
+// Watch for midnight rollover so a widget left open across days still snapshots.
+setInterval(checkDayRollover, 60000);
 
 window.addEventListener('resize', resizeCanvas);
 init();

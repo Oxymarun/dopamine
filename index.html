@@ -26,13 +26,13 @@
   [data-accent="rose"]  { --accent: #f43f5e; --adim: rgba(244,63,94,0.18); }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {
-    width: 370px; height: 640px; overflow: hidden;
+    width: 100vw; height: 100vh; overflow: hidden;
     background: var(--bg); color: var(--text);
     font-family: system-ui, -apple-system, sans-serif;
     font-size: 13px; line-height: 1.4;
   }
   #shell {
-    width: 370px; height: 640px;
+    width: 100vw; height: 100vh;
     background: var(--shell);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
@@ -1339,7 +1339,7 @@ const COMPLIMENTS = [
 ];
 
 let state = {
-  tasks: [], dumps: [], goals: ['','',''],
+  tasks: [], archivedTasks: [], dumps: [], goals: ['','',''],
   streak: 0, completedDates: [],
   xp: 0, moodHistory: {}, wins: [],
   settings: {
@@ -1388,6 +1388,7 @@ function loadState() {
       if (state.completedDates.length > 90) state.completedDates = state.completedDates.slice(-90);
       if (!Array.isArray(state.rewards)) state.rewards = [];
       if (!Array.isArray(state.redeemed)) state.redeemed = [];
+      if (!Array.isArray(state.archivedTasks)) state.archivedTasks = [];
       // Seed default rewards on first load
       if (state.rewards.length === 0) {
         state.rewards = [
@@ -1770,9 +1771,13 @@ function addStep(taskId, text, inp) {
 }
 
 function completeTask(id, ge) {
-  const task = state.tasks.find(t=>t.id===id);
-  if (!task || task.done || task.ge) return;
+  const idx = state.tasks.findIndex(t=>t.id===id);
+  if (idx === -1) return;
+  const task = state.tasks[idx];
+  if (task.done || task.ge) return;
   if (ge) task.ge = true; else task.done = true;
+  task.completedAt = Date.now();
+  task.completedDate = localDateStr(new Date());
 
   const xpEarned = ge ? Math.floor(XP_MAP[task.effort]*0.8) : XP_MAP[task.effort];
   const prevLvl = getLevelInfo(state.xp).level;
@@ -1787,8 +1792,23 @@ function completeTask(id, ge) {
 
   state.wins.unshift({ text: task.text, time: Date.now(), ge });
   if (state.wins.length > 15) state.wins.pop();
+
+  // Show check animation briefly, then archive
   save();
   renderTasks();
+  setTimeout(() => {
+    const stillIdx = state.tasks.findIndex(t=>t.id===id);
+    if (stillIdx !== -1) {
+      const [archived] = state.tasks.splice(stillIdx, 1);
+      if (!Array.isArray(state.archivedTasks)) state.archivedTasks = [];
+      state.archivedTasks.unshift(archived);
+      // Keep archive bounded (last 500 tasks)
+      if (state.archivedTasks.length > 500) state.archivedTasks.length = 500;
+      save();
+      renderTasks();
+    }
+  }, 600);
+
   updateHeaderBadges();
   updateStats();
   if (state.settings.confetti) fireConfetti();

@@ -445,6 +445,24 @@
   .win-time { font-size: 9px; color: var(--muted); flex-shrink: 0; }
   .win-ge { font-size: 9px; color: #a78bfa; flex-shrink: 0; }
 
+  /* HISTORY */
+  .history-list { max-height: 240px; overflow-y: auto; padding-right: 4px; }
+  .history-day { margin-bottom: 10px; }
+  .history-day-hdr {
+    font-size: 10px; color: var(--muted); text-transform: uppercase;
+    letter-spacing: 0.05em; margin-bottom: 4px; padding-bottom: 2px;
+    border-bottom: 1px solid var(--border);
+  }
+  .history-day-hdr .day-count { float: right; color: var(--accent); }
+  .history-task {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; color: var(--text); padding: 3px 0; opacity: 0.9;
+  }
+  .history-task .ht-time { font-size: 9px; color: var(--muted); flex-shrink: 0; }
+  .history-task .ht-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .history-task .ht-badge { font-size: 9px; color: #a78bfa; flex-shrink: 0; }
+  .history-empty { font-size: 11px; color: var(--muted); text-align: center; padding: 12px; }
+
   /* AUDIO BAR */
   #audio-bar {
     display: flex; align-items: center; gap: 6px;
@@ -1171,6 +1189,13 @@
         <div class="stat-card-title">Wall of Wins</div>
         <div id="wall-of-wins"></div>
       </div>
+      <div class="stat-card">
+        <div class="section-hdr" style="margin-top:0">
+          History
+          <button class="hdr-btn" onclick="toggleHistoryRange()"><span id="history-range-label">7 days</span></button>
+        </div>
+        <div id="history-list" class="history-list"></div>
+      </div>
     </div>
 
   </div><!-- /content -->
@@ -1440,6 +1465,13 @@ function loadState() {
       if (!Array.isArray(state.rewards)) state.rewards = [];
       if (!Array.isArray(state.redeemed)) state.redeemed = [];
       if (!Array.isArray(state.archivedTasks)) state.archivedTasks = [];
+      // Sweep: any task marked done/ge that never got archived → move to archive now
+      const zombies = state.tasks.filter(t => t.done || t.ge);
+      if (zombies.length > 0) {
+        state.tasks = state.tasks.filter(t => !t.done && !t.ge);
+        state.archivedTasks.unshift(...zombies);
+        if (state.archivedTasks.length > 500) state.archivedTasks.length = 500;
+      }
       // Seed default rewards on first load
       if (state.rewards.length === 0) {
         state.rewards = [
@@ -1738,7 +1770,7 @@ function renderTasks() {
     warn.textContent = `${activeCount} active tasks — consider dropping or skipping some`;
     list.appendChild(warn);
   }
-  state.tasks.forEach(task => list.appendChild(makeTaskEl(task)));
+  state.tasks.filter(t => !t.done && !t.ge).forEach(task => list.appendChild(makeTaskEl(task)));
 }
 
 function updateTaskTabBadge() {
@@ -2288,6 +2320,109 @@ function updateStats() {
       el.appendChild(geSpan);
     }
     wow.appendChild(el);
+  });
+
+  renderHistory();
+}
+
+// =====================================================================
+// HISTORY VIEW
+// =====================================================================
+let historyRange = 7;
+
+function toggleHistoryRange() {
+  historyRange = historyRange === 7 ? 0 : 7;
+  document.getElementById('history-range-label').textContent =
+    historyRange === 7 ? '7 days' : 'all';
+  renderHistory();
+}
+
+function renderHistory() {
+  const container = document.getElementById('history-list');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const archived = Array.isArray(state.archivedTasks) ? state.archivedTasks : [];
+  if (archived.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'history-empty';
+    empty.textContent = 'No completed tasks yet. Finish something and it\'ll show up here.';
+    container.appendChild(empty);
+    return;
+  }
+
+  let items = archived;
+  if (historyRange === 7) {
+    const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    items = archived.filter(t => (t.completedAt || 0) >= cutoff);
+  }
+
+  if (items.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'history-empty';
+    empty.textContent = 'Nothing in the last 7 days. Tap "7 days" to see older.';
+    container.appendChild(empty);
+    return;
+  }
+
+  const groups = {};
+  items.forEach(t => {
+    const key = t.completedDate || localDateStr(new Date(t.completedAt || Date.now()));
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(t);
+  });
+
+  const keys = Object.keys(groups).sort().reverse();
+  const todayKey = localDateStr(new Date());
+  const yesterdayKey = localDateStr(new Date(Date.now() - 86400000));
+
+  keys.forEach(key => {
+    const day = document.createElement('div');
+    day.className = 'history-day';
+
+    const hdr = document.createElement('div');
+    hdr.className = 'history-day-hdr';
+    let label;
+    if (key === todayKey) label = 'Today';
+    else if (key === yesterdayKey) label = 'Yesterday';
+    else {
+      const d = new Date(key + 'T00:00:00');
+      label = d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+    }
+    hdr.textContent = label;
+    const count = document.createElement('span');
+    count.className = 'day-count';
+    count.textContent = groups[key].length;
+    hdr.appendChild(count);
+    day.appendChild(hdr);
+
+    groups[key].forEach(t => {
+      const row = document.createElement('div');
+      row.className = 'history-task';
+
+      const time = document.createElement('span');
+      time.className = 'ht-time';
+      const d = new Date(t.completedAt || Date.now());
+      time.textContent = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+
+      const text = document.createElement('span');
+      text.className = 'ht-text';
+      text.textContent = t.text || '(untitled)';
+
+      row.appendChild(time);
+      row.appendChild(text);
+
+      if (t.ge) {
+        const badge = document.createElement('span');
+        badge.className = 'ht-badge';
+        badge.textContent = '\u2713 ge';
+        row.appendChild(badge);
+      }
+
+      day.appendChild(row);
+    });
+
+    container.appendChild(day);
   });
 }
 

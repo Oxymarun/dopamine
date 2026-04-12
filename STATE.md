@@ -45,7 +45,7 @@ A lightweight Electron desktop widget for macOS built for ADHD brains. Sits on t
 - Nura companion: animated dog with contextual messages, collapsible
 - Keyboard shortcuts (? to toggle help)
 - Data export/import (Settings)
-- Accent color themes (purple/blue/green/amber/rose)
+- Base themes (Dark/Light/Pastel) + Accent colors (purple/blue/green/amber/rose)
 - Task count badge on tab, soft warning at 20+ active tasks
 - Empty board celebration (confetti + toast when all tasks cleared)
 - Interval pending state (dashed border when changing work/break duration mid-session)
@@ -53,8 +53,7 @@ A lightweight Electron desktop widget for macOS built for ADHD brains. Sits on t
 - Keyboard shortcut link in Settings
 
 ### Uncommitted right now
-- Task archive render filter fix (Change 1-2 from today)
-- History view in Stats tab (Change 3-6 from today)
+- None (All recent CSS fixes, theme updates, and history view changes are merged to main)
 
 ### Not yet built
 - Demo GIF for README
@@ -64,8 +63,8 @@ A lightweight Electron desktop widget for macOS built for ADHD brains. Sits on t
 
 ## 4. Open Items / Next Actions
 
-- [ ] Commit + push today's changes (render filter fix + history view)
-- [ ] Test the widget end-to-end after today's changes
+- [x] Commit + push today's changes (render filter fix + history view + theme fixes)
+- [x] Test the widget end-to-end after today's changes
 - [ ] Record a demo GIF and add to README (for GitHub shareability)
 - [ ] Post X thread about the project (draft was created in a previous session)
 - [ ] Consider task reordering UI (reviewer suggestion, not urgent)

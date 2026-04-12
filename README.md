@@ -27,6 +27,7 @@ FocusFlow is scaffolding, not a cure. It matches how an ADHD brain actually move
 - **Brain dump** — quick capture for thoughts mid-session so you don't lose them
 - **Hyperfocus guard** — alerts you when you've been locked in too long
 - **Transition ritual** — brief wind-down prompt between tasks
+- **Themes** — Dark, Light, and Pastel modes with customizable accent colors
 - **Focus music** — embedded YouTube player for background audio
 - **Mood check-ins** — log how you're feeling through the day
 - **Wall of wins** — running log of completed tasks to revisit when motivation is low

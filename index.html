@@ -59,6 +59,51 @@
   [data-accent="green"] { --accent: #22c55e; --accent-rgb: 34,197,94; --adim: rgba(34,197,94,0.18); }
   [data-accent="amber"] { --accent: #f59e0b; --accent-rgb: 245,158,11; --adim: rgba(245,158,11,0.18); }
   [data-accent="rose"]  { --accent: #f43f5e; --accent-rgb: 244,63,94; --adim: rgba(244,63,94,0.18); }
+
+  /* Light theme */
+  [data-theme="light"] {
+    --bg: #f2f2f7;
+    --shell: rgba(255,255,255,0.82);
+    --s1: rgba(0,0,0,0.04);
+    --s2: rgba(0,0,0,0.07);
+    --border: rgba(0,0,0,0.1);
+    --text: #1c1c1e;
+    --muted: rgba(0,0,0,0.4);
+    --ok: #34c759; --warn: #ff9500; --hot: #ff3b30;
+    --glass-shell: rgba(255,255,255,0.72);
+    --glass-card: rgba(0,0,0,0.03);
+    --glass-card-hover: rgba(0,0,0,0.05);
+    --glass-overlay: rgba(255,255,255,0.82);
+    --border-light: rgba(255,255,255,0.8);
+    --border-dark: rgba(0,0,0,0.08);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05);
+    --shadow-md: 0 2px 8px rgba(0,0,0,0.1), 0 4px 16px rgba(0,0,0,0.06);
+    --shadow-lg: 0 4px 16px rgba(0,0,0,0.12), 0 8px 32px rgba(0,0,0,0.08);
+    --shadow-xl: 0 8px 32px rgba(0,0,0,0.15), 0 16px 48px rgba(0,0,0,0.1);
+  }
+
+  /* Pastel theme */
+  [data-theme="pastel"] {
+    --bg: #fdf6e3;
+    --shell: rgba(253,246,227,0.85);
+    --s1: rgba(0,0,0,0.04);
+    --s2: rgba(0,0,0,0.08);
+    --border: rgba(0,0,0,0.1);
+    --text: #4e4e50;
+    --muted: rgba(78,78,80,0.5);
+    --ok: #a8e6cf; --warn: #ffd3b6; --hot: #ffaaa5;
+    --glass-shell: rgba(253,246,227,0.75);
+    --glass-card: rgba(255,255,255,0.4);
+    --glass-card-hover: rgba(255,255,255,0.6);
+    --glass-overlay: rgba(253,246,227,0.85);
+    --border-light: rgba(255,255,255,0.9);
+    --border-dark: rgba(0,0,0,0.06);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.03);
+    --shadow-md: 0 2px 8px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+    --shadow-lg: 0 4px 16px rgba(0,0,0,0.08), 0 8px 32px rgba(0,0,0,0.06);
+    --shadow-xl: 0 8px 32px rgba(0,0,0,0.1), 0 16px 48px rgba(0,0,0,0.08);
+  }
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {
     width: 100vw; height: 100vh; overflow: hidden;
@@ -204,13 +249,13 @@
     font-size: var(--fs-xs); color: var(--muted); text-align: center;
     margin-top: 2px; letter-spacing: 0.04em; opacity: 0.7;
   }
-  #pie-track { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 10; }
+  #pie-track { fill: none; stroke: var(--s2); stroke-width: 10; }
   #pie-ring {
     fill: none; stroke: var(--accent); stroke-width: 10; stroke-linecap: round;
     transition: stroke-dashoffset 0.95s linear, stroke 0.5s ease;
     filter: drop-shadow(0 0 4px var(--accent));
   }
-  #pie-center { fill: rgba(12,12,18,0.55); }
+  #pie-center { fill: var(--s1); }
   @keyframes ring-glow {
     0%, 100% { filter: drop-shadow(0 0 4px var(--accent)); }
     50% { filter: drop-shadow(0 0 14px var(--accent)); }
@@ -224,15 +269,16 @@
   #timer-nums {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
     font-size: var(--fs-3xl); font-weight: 800; font-variant-numeric: tabular-nums;
-    color: rgba(255,255,255,0.95); pointer-events: none;
-    text-shadow: 0 1px 8px rgba(0,0,0,0.7);
+    color: var(--text); pointer-events: none;
+    text-shadow: none;
     display: block;
   }
   #toggle-nums {
-    position: absolute; bottom: 28px; right: calc(50% - 60px);
-    background: rgba(255,255,255,0.08); border: none; color: var(--muted);
-    font-size: var(--fs-xs); border-radius: 4px; padding: 2px 5px; cursor: pointer;
+    position: absolute; bottom: 20px; right: calc(50% - 46px);
+    background: var(--s1); border: 1px solid var(--border); color: var(--muted);
+    font-size: var(--fs-xs); border-radius: 4px; padding: 2px 4px; cursor: pointer;
     transition: all 0.15s;
+    box-shadow: var(--shadow-sm);
   }
   #toggle-nums:hover { background: var(--s2); color: var(--text); }
   .mode-label {
@@ -1107,15 +1153,17 @@
     onkeydown="if(event.key==='Enter'){event.preventDefault()}"></div>
 
       <div class="pie-wrap">
-        <svg id="pie-svg" width="150" height="150" viewBox="0 0 150 150" onclick="openOneThingOverlay()">
-          <circle id="pie-track" cx="75" cy="75" r="58" />
-          <circle id="pie-ring" cx="75" cy="75" r="58"
-            stroke-dasharray="364.42" stroke-dashoffset="364.42"
-            transform="rotate(-90 75 75)" />
-          <circle id="pie-center" cx="75" cy="75" r="44" />
-        </svg>
-        <div id="timer-nums">25:00</div>
-        <button id="toggle-nums" onclick="toggleTimerNums(event)">123</button>
+        <div class="pie-svg-container" style="position: relative; width: 150px; height: 150px;">
+          <svg id="pie-svg" width="150" height="150" viewBox="0 0 150 150" onclick="openOneThingOverlay()">
+            <circle id="pie-track" cx="75" cy="75" r="58" />
+            <circle id="pie-ring" cx="75" cy="75" r="58"
+              stroke-dasharray="364.42" stroke-dashoffset="364.42"
+              transform="rotate(-90 75 75)" />
+            <circle id="pie-center" cx="75" cy="75" r="44" />
+          </svg>
+          <div id="timer-nums">25:00</div>
+          <button id="toggle-nums" onclick="toggleTimerNums(event)">123</button>
+        </div>
         <div class="mode-label" id="mode-label">Focus</div>
         <div class="pie-hint">tap ring for focus mode</div>
       </div>
@@ -1487,6 +1535,14 @@
       </div>
     </div>
     <div class="setting-row">
+      <div class="setting-info"><span class="setting-label">Theme</span></div>
+      <div style="display:flex;gap:4px">
+        <button class="toggle-btn" id="theme-dark" onclick="setTheme('dark')">Dark</button>
+        <button class="toggle-btn" id="theme-light" onclick="setTheme('light')">Light</button>
+        <button class="toggle-btn" id="theme-pastel" onclick="setTheme('pastel')">Pastel</button>
+      </div>
+    </div>
+    <div class="setting-row">
       <div class="setting-info">
         <span class="setting-label">Hydration Reminders</span>
         <span class="setting-sub">Water & stretch reminders</span>
@@ -1604,6 +1660,7 @@ function loadState() {
       if (state.settings.compliments === undefined) state.settings.compliments = true;
       if (state.settings.autoStart === undefined) state.settings.autoStart = false;
       if (state.settings.nuraCollapsed === undefined) state.settings.nuraCollapsed = false;
+      if (state.settings.theme === undefined) state.settings.theme = 'dark';
       // Trim old completedDates (keep last 90 days)
       if (state.completedDates.length > 90) state.completedDates = state.completedDates.slice(-90);
       if (!Array.isArray(state.rewards)) state.rewards = [];
@@ -2689,6 +2746,27 @@ function applyAccent() {
   }
 }
 
+function setTheme(t) {
+  state.settings.theme = t;
+  save();
+  applyTheme();
+}
+
+function applyTheme() {
+  const t = state.settings.theme || 'dark';
+  if (t === 'dark') {
+    document.documentElement.removeAttribute('data-theme');
+  } else {
+    document.documentElement.setAttribute('data-theme', t);
+  }
+  const darkBtn = document.getElementById('theme-dark');
+  const lightBtn = document.getElementById('theme-light');
+  const pastelBtn = document.getElementById('theme-pastel');
+  if (darkBtn) darkBtn.classList.toggle('on', t === 'dark');
+  if (lightBtn) lightBtn.classList.toggle('on', t === 'light');
+  if (pastelBtn) pastelBtn.classList.toggle('on', t === 'pastel');
+}
+
 function toggleSetting(key) {
   state.settings[key] = !state.settings[key];
   save();
@@ -2699,6 +2777,7 @@ function toggleSetting(key) {
 
 function restoreSettings() {
   applyAccent();
+  applyTheme();
   document.querySelectorAll('#color-options .color-dot').forEach(d =>
     d.classList.toggle('active', d.dataset.color === state.settings.accentColor)
   );

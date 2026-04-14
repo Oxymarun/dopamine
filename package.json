@@ -3,10 +3,36 @@
   "version": "1.0.0",
   "description": "ADHD Focus Widget for macOS",
   "main": "main.js",
+  "author": "Arun Sharma",
+  "license": "MIT",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "build": "electron-builder --mac",
+    "build:dmg": "electron-builder --mac dmg"
   },
   "devDependencies": {
-    "electron": "^41.2.0"
+    "electron": "^28.3.3",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.arunsharma.focusflow",
+    "productName": "FocusFlow",
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": ["dmg"],
+      "icon": "build/icon.icns"
+    },
+    "dmg": {
+      "title": "FocusFlow",
+      "contents": [
+        { "x": 130, "y": 220 },
+        { "x": 410, "y": 220, "type": "link", "path": "/Applications" }
+      ]
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "index.html"
+    ]
   }
 }

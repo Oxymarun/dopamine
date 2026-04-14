@@ -16,5 +16,6 @@ npm-debug.log*
 # Electron build output
 dist/
 out/
-build/
+build/*
+!build/icon.icns
 *.app

@@ -19,11 +19,29 @@ One widget. Always on your desktop. No accounts, no cloud, no subscriptions. Jus
 
 ---
 
-## Why I built this
+## Why I built Dopamine
 
-I have ADHD. Every productivity app I tried was built for neurotypical brains — linear task lists, rigid timers, guilt-trip streaks that reset to zero when you have a bad day.
+I have ADHD.
 
-So I built Dopamine over a weekend. A tiny desktop widget that sits in the corner and does exactly three things: helps me start, helps me keep going, and doesn't punish me when I stall. It's raw, it's simple, and it actually works — because it was built around the failure modes I live with every day.
+For years I tried every productivity app out there, and every single one felt like it was designed for someone else's brain — someone neurotypical who could calmly follow linear task lists, stick to rigid timers, and survive those guilt-trip streaks that reset to zero the moment you had a bad day.
+
+They all punished me for being human.
+
+So one weekend I finally got fed up and built Dopamine — a tiny, always-on macOS widget that actually fits the way my brain works.
+
+It does exactly three things:
+
+- **Helps me start** when my brain is screaming "later"
+- **Helps me keep going** without demanding perfection
+- And most importantly — **it doesn't punish me** when I stall, get stuck, or have an off day
+
+No accounts. No cloud. No subscriptions. Just structure that finally feels kind instead of judgmental.
+
+It has the "Good Enough" button that killed my perfectionism, relentless carry-over tasks that don't disappear at midnight, Stuck Flow prompts that gently unblock me, hyperfocus guards that keep me alive, and dopamine hits that actually reward doing instead of planning.
+
+Dopamine isn't another productivity tool. It's the one I wish had existed for me — built by an ADHDer, for ADHDers.
+
+If it feels like it was made for your brain too... you're not alone. Star it, try it, and let me know what your brain thinks.
 
 ---
 
@@ -109,3 +127,7 @@ npm start
 ## License
 
 MIT. Fork it. Break it. Ship your version.
+
+---
+
+⭐ **Star this repo if it resonates** ❤️ — it helps other ADHDers find it.

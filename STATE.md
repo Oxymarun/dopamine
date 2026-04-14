@@ -1,6 +1,6 @@
-# FocusFlow Widget -- State Document
-**Last updated:** 2026-04-12
-**Version:** 1
+# Dopamine (formerly FocusFlow Widget) -- State Document
+**Last updated:** 2026-04-14
+**Version:** 1.0.0
 
 ## 1. Project Goal & Success Criteria
 
@@ -12,6 +12,7 @@ A lightweight Electron desktop widget for macOS built for ADHD brains. Sits on t
 - Completed tasks archive automatically and are visible in a per-day History view
 - XP/level/streak system works consistently across sessions
 - Zero dependencies beyond Electron -- no server, no accounts, no telemetry
+- Distributable as a standalone `.dmg` for non-technical users
 
 ## 2. Key Decisions Made
 
@@ -22,6 +23,9 @@ A lightweight Electron desktop widget for macOS built for ADHD brains. Sits on t
 - **"Good Enough" as a first-class completion** -- earns XP, shows in history with badge. Exists to interrupt ADHD perfectionism-stalling.
 - **Nura (companion dog) is collapsible** -- users can hide it to save vertical space on the Focus tab.
 - **Fluid layout (100vw/100vh)** -- replaced fixed 370x640px sizing so the widget resizes properly.
+- **Rebranded to "Dopamine"** -- chosen for virality and instant ADHD association. Previously "FocusFlow".
+- **Electron 28 (not 41)** -- Electron 41 has a breaking change where `require('electron')` returns undefined in the main process. Pinned to v28 which works.
+- **DMG distribution** -- packaged via electron-builder for one-click install. App is unsigned (no Apple Developer account), users run `xattr -cr` on first launch.
 
 ## 3. Current Status
 
@@ -51,24 +55,34 @@ A lightweight Electron desktop widget for macOS built for ADHD brains. Sits on t
 - Interval pending state (dashed border when changing work/break duration mid-session)
 - Pie ring hint ("tap ring for focus mode")
 - Keyboard shortcut link in Settings
-
-### Uncommitted right now
-- None (All recent CSS fixes, theme updates, and history view changes are merged to main)
+- **DMG packaging** via electron-builder (Dopamine-1.0.0-arm64.dmg)
+- **Custom app icon** (fiery brain + timer ring logo)
+- **README rewritten** for public launch with GIF demos, install guide, personal story
+- **GitHub repo renamed** from `focusflow-widget` to `dopamine`
+- **v1.0.0 release** published on GitHub with DMG download
 
 ### Not yet built
-- Demo GIF for README
+- Demo GIF for README (replaced with 3 feature-specific GIFs instead)
 - Task reordering/drag-and-drop
 - Titlebar density reduction (reviewer noted it's tight)
 - Undo on accidental task completion
+- Intel Mac (x64) DMG build
 
 ## 4. Open Items / Next Actions
 
-- [x] Commit + push today's changes (render filter fix + history view + theme fixes)
-- [x] Test the widget end-to-end after today's changes
-- [ ] Record a demo GIF and add to README (for GitHub shareability)
-- [ ] Post X thread about the project (draft was created in a previous session)
+- [x] Commit + push all changes
+- [x] Test the widget end-to-end after changes
+- [x] Package as .dmg for distribution
+- [x] Rebrand to Dopamine (name + logo + repo)
+- [x] Rewrite README for public launch
+- [x] Add GIF demos to README
+- [x] Create GitHub release v1.0.0
+- [x] Rename GitHub repo to `dopamine`
+- [ ] Post X thread about the project
+- [ ] Post on Reddit (r/ADHD, r/productivity, r/macapps)
 - [ ] Consider task reordering UI (reviewer suggestion, not urgent)
 - [ ] Consider titlebar density cleanup (reviewer suggestion, not urgent)
+- [ ] Build x64 DMG for Intel Mac users
 
 ## 5. Constraints & Rules
 
@@ -92,14 +106,16 @@ A lightweight Electron desktop widget for macOS built for ADHD brains. Sits on t
 - New fourth tab (Stats tab is the right home for history)
 - Server/backend/accounts/telemetry
 - Framework migration
+- Apple Developer signing ($99/year) -- using `xattr -cr` workaround instead
 
 ## 6. Important Context / Gotchas
 
-- **Electron launch quirk**: `npm start` must be run from the user's terminal. Spawning it from a subprocess (e.g., Claude's Bash tool) doesn't activate the macOS window. The app runs but the window never appears. Workaround: always give the user the terminal command to run themselves.
+- **Electron launch quirk**: `npm start` must be run from the user's terminal. Spawning it from a subprocess (e.g., Claude's Bash tool) doesn't always activate the macOS window.
+- **Electron 41 is broken**: `require('electron')` destructuring returns undefined for `app` in Electron 41 (Node v24). Pinned to Electron 28 which works. Do not upgrade without testing.
 - **The 600ms archive setTimeout is a safety net, not the primary filter.** The render filter (`!t.done && !t.ge`) is what actually hides completed tasks. The setTimeout just moves them to the archive array. If it gets interrupted (reload, crash), the zombie cleanup on load catches them.
 - **`state.wins` vs `state.archivedTasks`** -- these are separate arrays. `wins` is capped at 15, used for Wall of Wins display. `archivedTasks` is capped at 500, used for the History view. Both get populated on task completion.
 - **YouTube input validation** -- accepts only 11-char `[A-Za-z0-9_-]` video IDs to prevent XSS via iframe src injection.
-- **GitHub username changed** -- was `arunsharma281995-png`, now `Oxymarun`. Remote URL already updated.
+- **Unsigned app** -- DMG is not code-signed. macOS Gatekeeper will show "damaged" error. Users must run `xattr -cr /Applications/Dopamine.app` before first launch.
 - **CSS lint note** -- `line-clamp` needs both `-webkit-line-clamp` and standard `line-clamp` for compatibility. Both are present.
 
 ## 7. Relevant Artifacts / Links
@@ -111,8 +127,11 @@ A lightweight Electron desktop widget for macOS built for ADHD brains. Sits on t
 | Preload script | `preload.js` |
 | Package config | `package.json` |
 | README | `README.md` |
-| GitHub repo | https://github.com/Oxymarun/focusflow-widget |
-| Git remote | `origin` -> `https://github.com/Oxymarun/focusflow-widget.git` |
+| App icon | `build/icon.icns` |
+| GIF demos | `assets/main.gif`, `assets/breathe-easy.gif`, `assets/customise.gif` |
+| GitHub repo | https://github.com/Oxymarun/dopamine |
+| Release v1.0.0 | https://github.com/Oxymarun/dopamine/releases/tag/v1.0.0 |
+| Git remote | `origin` -> `https://github.com/Oxymarun/dopamine.git` |
 
 ### Key function locations in index.html
 | Function | Purpose |
@@ -129,11 +148,3 @@ A lightweight Electron desktop widget for macOS built for ADHD brains. Sits on t
 | `showTransition()` :3093 | Task transition ritual / empty board celebration |
 | `updateStats()` :2245 | Renders entire Stats tab including history |
 | `loadState()` :~1420 | Loads from localStorage with backfills + zombie cleanup |
-
-## 8. Next Milestone
-
-**"Shareable v1"** -- the widget is functionally complete, bug-free, and presentable enough to share publicly:
-- [ ] Today's changes committed and pushed
-- [ ] Widget tested end-to-end (no zombie tasks, history works)
-- [ ] Demo GIF recorded and embedded in README
-- [ ] X thread posted linking to the repo

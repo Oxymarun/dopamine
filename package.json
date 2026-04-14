@@ -1,5 +1,5 @@
 {
-  "name": "focusflow-widget",
+  "name": "dopamine",
   "version": "1.0.0",
   "description": "ADHD Focus Widget for macOS",
   "main": "main.js",
@@ -15,15 +15,15 @@
     "electron-builder": "^24.13.3"
   },
   "build": {
-    "appId": "com.arunsharma.focusflow",
-    "productName": "FocusFlow",
+    "appId": "com.arunsharma.dopamine",
+    "productName": "Dopamine",
     "mac": {
       "category": "public.app-category.productivity",
       "target": ["dmg"],
       "icon": "build/icon.icns"
     },
     "dmg": {
-      "title": "FocusFlow",
+      "title": "Dopamine",
       "contents": [
         { "x": 130, "y": 220 },
         { "x": 410, "y": 220, "type": "link", "path": "/Applications" }

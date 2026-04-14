@@ -1,4 +1,4 @@
-# FocusFlow
+# Dopamine
 
 **A lightweight macOS widget built by an ADHDer for ADHDers. Pomodoro + tasks + energy-aware streaks that actually work when your brain doesn't.**
 
@@ -10,7 +10,7 @@ One widget. Always on your desktop. No accounts, no cloud, no subscriptions. Jus
 
 I have ADHD. Every productivity app I tried was built for neurotypical brains — linear task lists, rigid timers, guilt-trip streaks that reset to zero when you have a bad day.
 
-So I built FocusFlow over a weekend. A tiny desktop widget that sits in the corner and does exactly three things: helps me start, helps me keep going, and doesn't punish me when I stall. It's raw, it's simple, and it actually works — because it was built around the failure modes I live with every day.
+So I built Dopamine over a weekend. A tiny desktop widget that sits in the corner and does exactly three things: helps me start, helps me keep going, and doesn't punish me when I stall. It's raw, it's simple, and it actually works — because it was built around the failure modes I live with every day.
 
 ---
 
@@ -24,7 +24,7 @@ So I built FocusFlow over a weekend. A tiny desktop widget that sits in the corn
 
 🔄 **Relentless Carry-over** — Tasks don't vanish at midnight. Unfinished items roll forward until you finish them or deliberately remove them.
 
-🧱 **Stuck Flow** — Totally paralyzed? FocusFlow walks you through isolating the tiniest next action and wires it as a substep.
+🧱 **Stuck Flow** — Totally paralyzed? Dopamine walks you through isolating the tiniest next action and wires it as a substep.
 
 ⚡ **Hyperfocus Guards** — Alerts that break you out before you dehydrate, forget to eat, or burn through 6 hours without standing up.
 
@@ -46,7 +46,7 @@ So I built FocusFlow over a weekend. A tiny desktop widget that sits in the corn
 
 ## Why this isn't like other tools
 
-**No linear perfectionism.** Most productivity apps assume you'll complete tasks in order, one by one, like a well-adjusted adult. FocusFlow assumes you won't — and that's fine.
+**No linear perfectionism.** Most productivity apps assume you'll complete tasks in order, one by one, like a well-adjusted adult. Dopamine assumes you won't — and that's fine.
 
 **Carry-over, not daily wipe.** Your tasks don't disappear when the clock hits midnight. They stay until you deal with them. No pretending yesterday didn't happen.
 
@@ -63,13 +63,13 @@ So I built FocusFlow over a weekend. A tiny desktop widget that sits in the corn
 ### Option A: Download the app (recommended)
 
 1. Go to the [latest release](https://github.com/Oxymarun/focusflow-widget/releases/latest)
-2. Download **FocusFlow-1.0.0-arm64.dmg**
-3. Open the `.dmg` and drag FocusFlow to your Applications folder
+2. Download **Dopamine-1.0.0-arm64.dmg**
+3. Open the `.dmg` and drag Dopamine to your Applications folder
 4. **First launch only** — open Terminal and run:
    ```bash
-   xattr -cr /Applications/FocusFlow.app
+   xattr -cr /Applications/Dopamine.app
    ```
-5. Launch FocusFlow from Launchpad
+5. Launch Dopamine from Launchpad
 
 > macOS blocks unsigned apps by default. The `xattr` command removes the quarantine flag. This is a one-time step.
 

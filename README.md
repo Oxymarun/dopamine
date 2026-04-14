@@ -1,48 +1,79 @@
-# FocusFlow Widget
+# FocusFlow
 
-A lightweight Electron desktop widget for macOS built for ADHD brains. Sits on your desktop and helps you track tasks, run Pomodoro sessions, manage energy, and build streaks — without getting in the way.
+**A lightweight macOS widget built by an ADHDer for ADHDers. Pomodoro + tasks + energy-aware streaks that actually work when your brain doesn't.**
 
-Built by someone with ADHD, for people with ADHD. Every feature exists because a generic productivity tool failed me first.
+One widget. Always on your desktop. No accounts, no cloud, no subscriptions. Just structure that fits the way your brain actually operates.
 
 ---
 
-## Why this exists
+## Why I built this
 
-Most productivity apps assume linear execution: set a timer, check it off, repeat. ADHD brains don't work that way — energy spikes and crashes, tasks feel impossible at 2pm and effortless at midnight, and "just be consistent" isn't a strategy.
+I have ADHD. Every productivity app I tried was built for neurotypical brains — linear task lists, rigid timers, guilt-trip streaks that reset to zero when you have a bad day.
 
-FocusFlow is scaffolding, not a cure. It matches how an ADHD brain actually moves through a day.
+So I built FocusFlow over a weekend. A tiny desktop widget that sits in the corner and does exactly three things: helps me start, helps me keep going, and doesn't punish me when I stall. It's raw, it's simple, and it actually works — because it was built around the failure modes I live with every day.
 
 ---
 
 ## Features
 
-- **Pomodoro timer** — configurable work/break durations with a visual progress ring
-- **Task management** — add tasks with effort levels (low / med / high), mark done or Good Enough
-- **Auto-archive** — completed tasks move out of the active list automatically, preserved in history
-- **Carry-over** — unfinished tasks roll into the next day instead of vanishing
-- **"Good Enough" button** — ship imperfect work and still earn XP (ADHD perfectionism is a stall mechanism — this is the interrupt)
-- **"Stuck" flow** — guided prompts when your brain just won't move
-- **XP + levels** — earn XP for completing tasks and pomos, spend it on custom rewards
-- **Streaks** — day-over-day streak tracking
-- **Brain dump** — quick capture for thoughts mid-session so you don't lose them
-- **Hyperfocus guard** — alerts you when you've been locked in too long
-- **Transition ritual** — brief wind-down prompt between tasks
-- **Themes** — Dark, Light, and Pastel modes with customizable accent colors
-- **Focus music** — embedded YouTube player for background audio
-- **Mood check-ins** — log how you're feeling through the day
-- **Wall of wins** — running log of completed tasks to revisit when motivation is low
-- **Data export / import** — back up and restore your state as JSON
+🍅 **Pomodoro Timer** — Configurable work/break cycles with a visual progress ring. Snooze (+10 min) when you're in flow.
+
+✅ **Task Management** — Add tasks with effort levels (low/med/high), break them into substeps, and track what matters.
+
+👍 **"Good Enough" Button** — The perfectionism killer. Ship the B+ version, collect your XP, move on. This one feature alone changed how I work.
+
+🔄 **Relentless Carry-over** — Tasks don't vanish at midnight. Unfinished items roll forward until you finish them or deliberately remove them.
+
+🧱 **Stuck Flow** — Totally paralyzed? FocusFlow walks you through isolating the tiniest next action and wires it as a substep.
+
+⚡ **Hyperfocus Guards** — Alerts that break you out before you dehydrate, forget to eat, or burn through 6 hours without standing up.
+
+🎮 **XP + Levels + Streaks** — Scaled rewards tied to execution. Dopamine wired to doing, not planning.
+
+🎵 **Focus Music** — Embedded YouTube audio right in the widget. No browser tab, no context switch.
+
+🐕 **Nura (Companion Dog)** — An animated buddy with contextual messages. Collapsible when you need space.
+
+📊 **History + Wall of Wins** — Per-day archive of everything you completed. Proof that you're getting things done, even on the days it doesn't feel like it.
+
+🎨 **Themes** — Dark, Light, Pastel. Five accent colors. Because environment matters.
+
+🧠 **Brain Dump** — Quick capture mid-session so stray thoughts don't derail your focus.
+
+⌨️ **Keyboard Shortcuts** — Press `?` for the full list.
 
 ---
 
-## Getting Started
+## Why this isn't like other tools
 
-### Requirements
-- macOS
-- Node.js 18 or newer ([download](https://nodejs.org))
-- npm (ships with Node.js)
+**No linear perfectionism.** Most productivity apps assume you'll complete tasks in order, one by one, like a well-adjusted adult. FocusFlow assumes you won't — and that's fine.
 
-### Install and run
+**Carry-over, not daily wipe.** Your tasks don't disappear when the clock hits midnight. They stay until you deal with them. No pretending yesterday didn't happen.
+
+**"Good Enough" is a real completion state.** It earns XP, shows in your history with a badge, and counts as a win. Because done is better than perfect.
+
+**100% local.** Zero backend. Zero telemetry. Zero accounts. Everything lives in your machine's localStorage. Export your data as JSON anytime.
+
+**No build pipeline.** The entire UI is vanilla HTML/CSS/JS in a single file. No React, no webpack, no nonsense. Read the source — it's all there.
+
+---
+
+## Installation
+
+### Option A: Download the app (recommended)
+
+1. Go to the [latest release](https://github.com/Oxymarun/focusflow-widget/releases/latest)
+2. Download **FocusFlow-1.0.0-arm64.dmg**
+3. Open the `.dmg` and drag FocusFlow to your Applications folder
+4. **First launch only** — open Terminal and run:
+   ```bash
+   xattr -cr /Applications/FocusFlow.app
+   ```
+5. Launch FocusFlow from Launchpad
+
+> macOS blocks unsigned apps by default. The `xattr` command removes the quarantine flag. This is a one-time step.
+
+### Option B: Run from source (for devs)
 
 ```bash
 git clone https://github.com/Oxymarun/focusflow-widget.git
@@ -51,56 +82,17 @@ npm install
 npm start
 ```
 
-The widget window will appear. Drag it anywhere on your screen.
-
-### Troubleshooting
-
-If `npm start` fails with an Electron error, clear and reinstall:
-
-```bash
-rm -rf node_modules package-lock.json
-npm cache clean --force
-npm install
-npm start
-```
-
 ---
 
-## Stack
+## Tech Stack
 
-- Electron 28 (macOS)
-- Vanilla HTML / CSS / JS — no framework, no build step
-- localStorage for persistence (no server, no telemetry, no accounts)
-
-The entire app lives in `index.html` + `main.js` + `preload.js`. Read the source. It's self-contained.
-
----
-
-## Window Controls
-
-| Button | Action |
-|--------|--------|
-| Red dot | Close the app |
-| Yellow dot | Minimize to dock |
-| Pin | Keep window always on top |
-| Resize | Drag any corner to resize the widget |
-
----
-
-## Data & Privacy
-
-All data is stored locally in your browser's `localStorage`. Nothing is sent to any server. No analytics. No accounts. No tracking.
-
-Use **Settings → Export** to back up your data as a JSON file, and **Import** to restore it on another machine.
-
----
-
-## Contributing
-
-Pull requests welcome — especially bug reports from other ADHD users. The codebase is intentionally small and readable, so jumping in is easy.
+- macOS + Electron 28
+- Vanilla HTML/CSS/JS — zero framework bloat, zero build step
+- Everything lives in `index.html` — read the source
+- localStorage for persistence, no server, no telemetry
 
 ---
 
 ## License
 
-MIT — do whatever you want with it.
+MIT. Fork it. Break it. Ship your version.

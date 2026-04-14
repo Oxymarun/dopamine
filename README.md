@@ -8,14 +8,35 @@ One widget. Always on your desktop. No accounts, no cloud, no subscriptions. Jus
 
 ## See it in action
 
-### Your command center: Pomodoro timer, task management, XP streaks — all in one tiny widget.
-![Dopamine main view](assets/main.gif)
+<p align="center">
+  <img src="assets/main.gif" width="280" alt="Dopamine in action — Pomodoro, tasks, XP streaks">
+  &nbsp;&nbsp;&nbsp;
+  <img src="assets/breathe-easy.gif" width="280" alt="SOS mode — breathing exercises and brain dump">
+  &nbsp;&nbsp;&nbsp;
+  <img src="assets/customise.gif" width="280" alt="Themes and customisation">
+</p>
 
-### SOS mode: breathing exercises when you're fried + brain dump to capture stray thoughts without losing focus.
-![Breathe easy](assets/breathe-easy.gif)
+<p align="center">
+  <em>Command center</em> &nbsp;·&nbsp; <em>SOS mode</em> &nbsp;·&nbsp; <em>Make it yours</em>
+</p>
 
-### Make it yours: dark/light/pastel themes, accent colors, celebrations, and more.
-![Customise](assets/customise.gif)
+---
+
+## The widget up close
+
+<p align="center">
+  <img src="assets/screenshots/home-pomodoro.png" width="220" alt="Focus tab — Pomodoro timer with Nura companion">
+  &nbsp;&nbsp;
+  <img src="assets/screenshots/tasks-braindump.png" width="220" alt="Tasks tab — Top 3 goals, brain dump, effort levels">
+  &nbsp;&nbsp;
+  <img src="assets/screenshots/stats-buddy.png" width="220" alt="Stats tab — streaks, XP, weekly summary">
+  &nbsp;&nbsp;
+  <img src="assets/screenshots/settings.png" width="220" alt="Settings — themes, hydration reminders, confetti, data export">
+</p>
+
+<p align="center">
+  <em>Focus & timer</em> &nbsp;·&nbsp; <em>Tasks & brain dump</em> &nbsp;·&nbsp; <em>Stats & streaks</em> &nbsp;·&nbsp; <em>Settings</em>
+</p>
 
 ---
 

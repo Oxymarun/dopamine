@@ -58,7 +58,10 @@ A lightweight Electron desktop widget for macOS built for ADHD brains. Sits on t
 - **DMG packaging** via electron-builder (Dopamine-1.0.0-arm64.dmg)
 - **Custom app icon** (fiery brain + timer ring logo)
 - **README rewritten** for public launch with GIF demos, install guide, personal story
+- **README redesigned** with side-by-side GIF row + 4-screenshot gallery, centered captions
+- **Screenshots added** — home-pomodoro, tasks-braindump, stats-buddy, settings (in `assets/screenshots/`)
 - **GitHub repo renamed** from `focusflow-widget` to `dopamine`
+- **GitHub topics added** — 18 tags for discoverability (adhd, productivity, macos-widget, neurodivergent, etc.)
 - **v1.0.0 release** published on GitHub with DMG download
 
 ### Not yet built
@@ -78,6 +81,10 @@ A lightweight Electron desktop widget for macOS built for ADHD brains. Sits on t
 - [x] Add GIF demos to README
 - [x] Create GitHub release v1.0.0
 - [x] Rename GitHub repo to `dopamine`
+- [x] Add screenshots to README (4 screenshots in gallery row)
+- [x] Redesign README layout (side-by-side GIFs + screenshot grid)
+- [x] Add GitHub repo topics (18 tags for discoverability)
+- [ ] Upload social preview image on GitHub (manual — Settings > General)
 - [ ] Post X thread about the project
 - [ ] Post on Reddit (r/ADHD, r/productivity, r/macapps)
 - [ ] Consider task reordering UI (reviewer suggestion, not urgent)
@@ -129,6 +136,7 @@ A lightweight Electron desktop widget for macOS built for ADHD brains. Sits on t
 | README | `README.md` |
 | App icon | `build/icon.icns` |
 | GIF demos | `assets/main.gif`, `assets/breathe-easy.gif`, `assets/customise.gif` |
+| Screenshots | `assets/screenshots/home-pomodoro.png`, `tasks-braindump.png`, `stats-buddy.png`, `settings.png` |
 | GitHub repo | https://github.com/Oxymarun/dopamine |
 | Release v1.0.0 | https://github.com/Oxymarun/dopamine/releases/tag/v1.0.0 |
 | Git remote | `origin` -> `https://github.com/Oxymarun/dopamine.git` |

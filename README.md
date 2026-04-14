@@ -6,6 +6,19 @@ One widget. Always on your desktop. No accounts, no cloud, no subscriptions. Jus
 
 ---
 
+## See it in action
+
+### Your command center: Pomodoro timer, task management, XP streaks — all in one tiny widget.
+![Dopamine main view](assets/main.gif)
+
+### SOS mode: breathing exercises when you're fried + brain dump to capture stray thoughts without losing focus.
+![Breathe easy](assets/breathe-easy.gif)
+
+### Make it yours: dark/light/pastel themes, accent colors, celebrations, and more.
+![Customise](assets/customise.gif)
+
+---
+
 ## Why I built this
 
 I have ADHD. Every productivity app I tried was built for neurotypical brains — linear task lists, rigid timers, guilt-trip streaks that reset to zero when you have a bad day.
@@ -62,7 +75,7 @@ So I built Dopamine over a weekend. A tiny desktop widget that sits in the corne
 
 ### Option A: Download the app (recommended)
 
-1. Go to the [latest release](https://github.com/Oxymarun/focusflow-widget/releases/latest)
+1. Go to the [latest release](https://github.com/Oxymarun/dopamine/releases/latest)
 2. Download **Dopamine-1.0.0-arm64.dmg**
 3. Open the `.dmg` and drag Dopamine to your Applications folder
 4. **First launch only** — open Terminal and run:
@@ -76,8 +89,8 @@ So I built Dopamine over a weekend. A tiny desktop widget that sits in the corne
 ### Option B: Run from source (for devs)
 
 ```bash
-git clone https://github.com/Oxymarun/focusflow-widget.git
-cd focusflow-widget
+git clone https://github.com/Oxymarun/dopamine.git
+cd dopamine
 npm install
 npm start
 ```

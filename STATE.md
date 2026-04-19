@@ -1,6 +1,6 @@
 # Dopamine (formerly FocusFlow Widget) -- State Document
-**Last updated:** 2026-04-14
-**Version:** 1.0.0
+**Last updated:** 2026-04-19
+**Version:** 1.0.1
 
 ## 1. Project Goal & Success Criteria
 
@@ -63,6 +63,7 @@ A lightweight Electron desktop widget for macOS built for ADHD brains. Sits on t
 - **GitHub repo renamed** from `focusflow-widget` to `dopamine`
 - **GitHub topics added** — 18 tags for discoverability (adhd, productivity, macos-widget, neurodivergent, etc.)
 - **v1.0.0 release** published on GitHub with DMG download
+- **UI redesign (v1.0.1)** — full CSS overhaul: glass morphism replaced with solid dark surfaces, min font 12px, modern pill tabs, solid accent primary button, uniform borders, green pomo dots, "Dopamine" titlebar branding
 
 ### Not yet built
 - Demo GIF for README (replaced with 3 feature-specific GIFs instead)
@@ -88,7 +89,7 @@ A lightweight Electron desktop widget for macOS built for ADHD brains. Sits on t
 - [ ] Post X thread about the project
 - [ ] Post on Reddit (r/ADHD, r/productivity, r/macapps)
 - [ ] Consider task reordering UI (reviewer suggestion, not urgent)
-- [ ] Consider titlebar density cleanup (reviewer suggestion, not urgent)
+- [x] UI redesign — modern flat aesthetic, fixed contrast, pill tabs, solid buttons
 - [ ] Build x64 DMG for Intel Mac users
 
 ## 5. Constraints & Rules

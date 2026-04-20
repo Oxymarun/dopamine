@@ -1,159 +1,238 @@
-# Dopamine (formerly FocusFlow Widget) -- State Document
-**Last updated:** 2026-04-19
-**Version:** 1.0.1
+# Dopamine — State Document
+**Last updated:** 2026-04-20
+**Version:** 2.0.0-wip (React rebuild in progress)
+
+---
 
 ## 1. Project Goal & Success Criteria
 
-A lightweight Electron desktop widget for macOS built for ADHD brains. Sits on the desktop and helps track tasks, run Pomodoro sessions, manage energy, and build streaks -- without getting in the way.
+A lightweight Electron desktop widget for macOS built for ADHD brains. Sits on the desktop, helps track tasks, run Pomodoro sessions, manage energy, and build streaks — without getting in the way.
 
 **Success criteria:**
-- Widget launches reliably via `npm start`, resizes fluidly, stays on top when pinned
-- Tasks can be added, completed, marked "Good Enough", or carried over -- never lost
-- Completed tasks archive automatically and are visible in a per-day History view
-- XP/level/streak system works consistently across sessions
-- Zero dependencies beyond Electron -- no server, no accounts, no telemetry
-- Distributable as a standalone `.dmg` for non-technical users
+- Widget launches reliably, resizes fluidly, stays on top when pinned
+- Tasks can be added, completed, sub-stepped, and sent to Focus tab
+- Pomodoro timer with sound + OS notification on complete
+- Streak/level system persists across sessions
+- Nura companion reacts to timer state
+- Distributable as standalone `.dmg`
 
-## 2. Key Decisions Made
+---
 
-- **Single-file architecture** -- entire UI lives in `index.html` (~3500 lines). No framework, no build step. Intentional for simplicity and readability.
-- **localStorage only** -- all persistence via `localStorage`. No backend. Export/import JSON for backup.
-- **Carry-over, not daily wipe** -- uncompleted tasks stay in the active list the next day (user chose this over auto-clear).
-- **No auto-delete of archived tasks** -- archive capped at 500 items. ADHD brains benefit from a long evidence trail of completed work; hard deletion was rejected.
-- **"Good Enough" as a first-class completion** -- earns XP, shows in history with badge. Exists to interrupt ADHD perfectionism-stalling.
-- **Nura (companion dog) is collapsible** -- users can hide it to save vertical space on the Focus tab.
-- **Fluid layout (100vw/100vh)** -- replaced fixed 370x640px sizing so the widget resizes properly.
-- **Rebranded to "Dopamine"** -- chosen for virality and instant ADHD association. Previously "FocusFlow".
-- **Electron 28 (not 41)** -- Electron 41 has a breaking change where `require('electron')` returns undefined in the main process. Pinned to v28 which works.
-- **DMG distribution** -- packaged via electron-builder for one-click install. App is unsigned (no Apple Developer account), users run `xattr -cr` on first launch.
+## 2. Architecture (as of v2.0.0)
 
-## 3. Current Status
+**Stack:** Electron 28 + Vite + React 19 + TypeScript + Tailwind CSS + Radix UI
 
-### Done and working
-- Pomodoro timer with configurable work/break durations, visual progress ring, snooze (+10 min)
-- Task management: add with effort levels (low/med/high), mark done or Good Enough, substeps
-- Auto-archive: completed tasks move from `state.tasks` to `state.archivedTasks` after 600ms
-- Render filter: `renderTasks()` only shows active (not done/ge) tasks
-- Zombie cleanup: on load, any orphaned done/ge tasks in `state.tasks` get swept to archive
-- History view: Stats tab shows completed tasks grouped by day (Today/Yesterday/dates), 7-day default with "all" toggle
-- Wall of Wins: last 15 completions shown in Stats
-- XP + levels system (Spark through higher tiers)
-- Day streaks with badge
-- Brain dump: quick capture mid-session, preview on Tasks tab, full list in overlay
-- Hyperfocus guard alerts
-- Transition ritual between tasks
-- Focus music via embedded YouTube player (with stop button)
-- Mood check-ins
-- Stuck flow: guided prompts + "tiniest next action" wired to substeps
-- One Thing overlay: full-screen focus on current task with line-clamp
-- Nura companion: animated dog with contextual messages, collapsible
-- Keyboard shortcuts (? to toggle help)
-- Data export/import (Settings)
-- Base themes (Dark/Light/Pastel) + Accent colors (purple/blue/green/amber/rose)
-- Task count badge on tab, soft warning at 20+ active tasks
-- Empty board celebration (confetti + toast when all tasks cleared)
-- Interval pending state (dashed border when changing work/break duration mid-session)
-- Pie ring hint ("tap ring for focus mode")
-- Keyboard shortcut link in Settings
-- **DMG packaging** via electron-builder (Dopamine-1.0.0-arm64.dmg)
-- **Custom app icon** (fiery brain + timer ring logo)
-- **README rewritten** for public launch with GIF demos, install guide, personal story
-- **README redesigned** with side-by-side GIF row + 4-screenshot gallery, centered captions
-- **Screenshots added** — home-pomodoro, tasks-braindump, stats-buddy, settings (in `assets/screenshots/`)
-- **GitHub repo renamed** from `focusflow-widget` to `dopamine`
-- **GitHub topics added** — 18 tags for discoverability (adhd, productivity, macos-widget, neurodivergent, etc.)
-- **v1.0.0 release** published on GitHub with DMG download
-- **UI redesign (v1.0.1)** — full CSS overhaul: glass morphism replaced with solid dark surfaces, min font 12px, modern pill tabs, solid accent primary button, uniform borders, green pomo dots, "Dopamine" titlebar branding
+```
+focusflow-widget/
+  main.js              # Electron main — window, tray, IPC
+  preload.js           # IPC bridge (close, minimize, pin, setAlwaysOnTop)
+  package.json         # deps + scripts
+  vite.config.ts       # Electron-aware Vite (base: './')
+  tailwind.config.ts   # design tokens
+  src/
+    main.tsx           # React entry
+    App.tsx            # Shell + Radix Tabs + state lifting
+    components/
+      TitleBar.tsx     # traffic lights, clock, streak/level chips, pin
+      Focus.tsx        # ring timer, mood, Nura integration
+      Tasks.tsx        # task list with sub-steps, focus button
+      Stats.tsx        # streak/level/focus-time, mood grid, session history
+      Settings.tsx     # duration, accent, sound, alwaysOnTop toggles
+      Nura.tsx         # beagle mascot SVG component
+    lib/
+      storage.ts       # localStorage wrappers + streak/level logic
+      timer.ts         # TimerState type, formatTime, ringProgress
+      sound.ts         # Web Audio API chimes (no external files)
+      notify.ts        # OS Notification wrapper
+    styles/
+      globals.css      # Tailwind base + CSS custom props
+```
 
-### Not yet built
-- Demo GIF for README (replaced with 3 feature-specific GIFs instead)
-- Task reordering/drag-and-drop
-- Titlebar density reduction (reviewer noted it's tight)
-- Undo on accidental task completion
-- Intel Mac (x64) DMG build
+**Scripts:**
+| Command | Does |
+|---|---|
+| `npm run dev` | Vite dev server only (port 5173) |
+| `npm run dev:app` | Vite + Electron together (concurrently + wait-on) |
+| `npm run build:renderer` | Vite prod build → `dist/` |
+| `npm start` | Electron loading `dist/index.html` |
+| `npm run build:dmg` | Full DMG build via electron-builder |
 
-## 4. Open Items / Next Actions
+---
 
-- [x] Commit + push all changes
-- [x] Test the widget end-to-end after changes
-- [x] Package as .dmg for distribution
-- [x] Rebrand to Dopamine (name + logo + repo)
-- [x] Rewrite README for public launch
-- [x] Add GIF demos to README
-- [x] Create GitHub release v1.0.0
-- [x] Rename GitHub repo to `dopamine`
-- [x] Add screenshots to README (4 screenshots in gallery row)
-- [x] Redesign README layout (side-by-side GIFs + screenshot grid)
-- [x] Add GitHub repo topics (18 tags for discoverability)
-- [ ] Upload social preview image on GitHub (manual — Settings > General)
-- [ ] Post X thread about the project
-- [ ] Post on Reddit (r/ADHD, r/productivity, r/macapps)
-- [ ] Consider task reordering UI (reviewer suggestion, not urgent)
-- [x] UI redesign — modern flat aesthetic, fixed contrast, pill tabs, solid buttons
-- [ ] Build x64 DMG for Intel Mac users
+## 3. Key Decisions Made (v2.0.0)
 
-## 5. Constraints & Rules
+- **React + Vite rebuild** — old 2800-line monolithic `index.html` preserved as `index.html.bak`. New renderer lives in `src/`.
+- **Radix UI Tabs** — only Radix component used. No shadcn (avoided for simplicity).
+- **Web Audio API for sound** — no external sound files. Ascending 3-tone chime on work complete, 2-tone on break.
+- **Close hides, not quits** — window hides on red dot click. Tray click toggles visibility. `app.dock.hide()` keeps it out of dock.
+- **Window position persists** — saved to `userData/window-state.json` on move/resize. Loaded on next start.
+- **alwaysOnTop persists** — Settings toggle writes to `userData/settings.json` via IPC. main.js reads it at startup.
+- **Stats refresh on tab open** — `key={statsKey}` increments every time Stats tab is opened, forcing remount + fresh storage read.
+- **focusTask lifted to App** — clicking crosshair in Tasks sets `focusTask` state in App, switches tab to Focus, pre-fills task input.
+- **Nura neglect timer** — 20 min no timer activity → Nura goes sad. Resets on start/pet.
+- **Streak/level in App state** — `rewards` state in App.tsx, refreshed via `onSessionComplete` callback from Focus.
+
+---
+
+## 4. Current Status
+
+### Done (v2.0.0 — ~40% of original feature set)
+
+**Core infrastructure**
+- [x] Vite + React + TS + Tailwind scaffold
+- [x] Design tokens (globals.css) — Linear-inspired dark palette
+- [x] Electron: window persistence, tray, dock hide, alwaysOnTop on startup
+- [x] Combined dev script (`npm run dev:app`)
+
+**Focus tab**
+- [x] SVG ring timer (work/break modes)
+- [x] Start / Pause / Resume / Reset
+- [x] +5m button, preset buttons (15/25/45/60m)
+- [x] Mode toggle (Work / Break)
+- [x] Mood picker (5 emojis)
+- [x] Sound on complete (Web Audio)
+- [x] OS notification on complete
+- [x] Session complete → updates streak/level in TitleBar
+
+**Tasks tab**
+- [x] Add / complete / delete tasks
+- [x] Sub-steps (expandable per task)
+- [x] "Focus this" button → sends task to Focus tab + switches tab
+
+**Stats tab**
+- [x] Streak, today's sessions, total focus time chips
+- [x] Level display
+- [x] 7-day mood grid
+- [x] Session history list (last 20)
+- [x] Live refresh on tab open
+
+**Settings tab**
+- [x] Work / break duration (± 5m steppers)
+- [x] Accent colour picker (5 presets)
+- [x] Sound toggle
+- [x] Always-on-top toggle (persists via IPC to main.js)
+- [x] Clear session history button
+
+**TitleBar**
+- [x] Traffic lights (close hides, minimize minimizes)
+- [x] Live clock
+- [x] Streak chip (🔥Nd)
+- [x] Level chip
+- [x] Pin toggle (alwaysOnTop)
+
+**Nura**
+- [x] Full beagle SVG (chibi flat style, redesigned from original rects)
+- [x] 5 animation states: idle, focus, break, celebrate, neglected
+- [x] Streak accessories: collar (≥3d), bandana (≥7d), crown (≥30d)
+- [x] Night cap (10pm–6am)
+- [x] Eye lids close in focus mode
+- [x] Speech bubbles (mode-change, motivation, pet, neglect)
+- [x] Pet interaction (click → bounce + random msg)
+- [x] Zoomies (1-in-20 on timer start)
+- [x] Neglect timer (20min idle → sad state)
+- [x] Motivation bubbles every 8min during focus
+
+---
+
+### Not yet built (~60% of original features)
+
+**Focus tab gaps**
+- [ ] Pomo dots row (visual session counter below timer)
+- [ ] Session duration counter ("Session: 0:00" live elapsed)
+- [ ] "Done" button (marks current task complete from Focus tab)
+- [ ] "Good Enough" button (ADHD perfectionism interrupt)
+- [ ] Snooze button (appears while timer running, +10m)
+- [ ] Timer ring glow when running
+
+**Tasks tab gaps**
+- [ ] Task effort labels (⚡Tiny / 🔹Small / 🔷Med / 🔶Big)
+- [ ] Top 3 goals section
+- [ ] Brain dump inbox (quick capture, separate from tasks)
+
+**Missing tabs / overlays**
+- [ ] Breathing exercise overlay (FAB)
+- [ ] Brain dump overlay (FAB)
+- [ ] Stuck flow overlay (guided prompts + tiny action)
+- [ ] Hyperfocus alert (after long unbroken sessions)
+- [ ] One-thing overlay (full-screen focus on current task)
+
+**Stats gaps**
+- [ ] Weekly bar charts (tasks / pomos / focus time)
+- [ ] XP bar with level progress
+- [ ] Reward shop (custom redeemable rewards)
+- [ ] Wall of wins
+
+**Global missing**
+- [ ] Ambient noise bar (rain / brown noise / white noise / cafe + volume + YouTube)
+- [ ] Confetti / FX canvas (on task complete, empty board)
+- [ ] Toast notifications (in-app)
+- [ ] Keyboard shortcuts (? to toggle help)
+- [ ] Data export / import
+
+---
+
+## 5. Open Items / Next Actions
+
+- [ ] Continue React rebuild — next priority: Pomo dots + session duration + "Done"/"GE" buttons
+- [ ] Brain dump inbox in Tasks tab
+- [ ] Ambient noise bar (audio section at bottom of Focus)
+- [ ] Breathing overlay FAB
+- [ ] XP system + reward shop in Stats
+- [ ] Weekly bar charts in Stats
+- [ ] Confetti + toast system
+- [ ] Nura: body/tail visibility fix (dark saddle merges with ears visually)
+- [ ] Test full flow in Electron (not just browser preview)
+- [ ] Build + test DMG
+- [ ] Merge PR #1 once feature-complete enough
+
+**PR:** https://github.com/Oxymarun/dopamine/pull/1 (feat/react-vite-rebuild → main)
+
+---
+
+## 6. Constraints & Rules
 
 ### Tech
-- Vanilla JS only -- no React, no framework, no build step
-- Single-file `index.html` for all UI (CSS + HTML + JS)
-- Electron 28, macOS only
-- `contextIsolation: true`, `nodeIntegration: false` (security model)
-- localStorage for persistence, capped at 500 archived tasks
-- No `any` in TypeScript (not currently using TS, but rule applies if we ever do)
+- Electron 28 — do NOT upgrade (v41 breaks `require('electron')` in main process)
+- React + TypeScript + Tailwind — no `any` in TS
 - No unnecessary dependencies
+- localStorage for persistence — storage keys are `ff_tasks`, `ff_sessions`, `ff_settings`, `ff_rewards`
+- `contextIsolation: true`, `nodeIntegration: false`
 
 ### UX
-- Built for ADHD -- every feature must reduce friction, not add it
-- No native `confirm()`/`alert()` -- use in-app DOM toasts/modals instead
-- Hydration reminders only fire during active focus sessions
-- No trailing summaries after completing work (user preference)
+- Built for ADHD — every feature must reduce friction
+- No native `confirm()`/`alert()` — use in-app toasts
+- Nura is not collapsible yet (was in v1, restore if needed)
 
 ### Explicitly NOT doing
-- Auto-delete archived tasks (storage is trivial, long win-log is valuable)
-- New fourth tab (Stats tab is the right home for history)
-- Server/backend/accounts/telemetry
-- Framework migration
-- Apple Developer signing ($99/year) -- using `xattr -cr` workaround instead
+- Auto-delete archived tasks
+- Server / backend / accounts / telemetry
+- Apple Developer signing ($99/yr) — `xattr -cr` workaround for DMG
 
-## 6. Important Context / Gotchas
+---
 
-- **Electron launch quirk**: `npm start` must be run from the user's terminal. Spawning it from a subprocess (e.g., Claude's Bash tool) doesn't always activate the macOS window.
-- **Electron 41 is broken**: `require('electron')` destructuring returns undefined for `app` in Electron 41 (Node v24). Pinned to Electron 28 which works. Do not upgrade without testing.
-- **The 600ms archive setTimeout is a safety net, not the primary filter.** The render filter (`!t.done && !t.ge`) is what actually hides completed tasks. The setTimeout just moves them to the archive array. If it gets interrupted (reload, crash), the zombie cleanup on load catches them.
-- **`state.wins` vs `state.archivedTasks`** -- these are separate arrays. `wins` is capped at 15, used for Wall of Wins display. `archivedTasks` is capped at 500, used for the History view. Both get populated on task completion.
-- **YouTube input validation** -- accepts only 11-char `[A-Za-z0-9_-]` video IDs to prevent XSS via iframe src injection.
-- **Unsigned app** -- DMG is not code-signed. macOS Gatekeeper will show "damaged" error. Users must run `xattr -cr /Applications/Dopamine.app` before first launch.
-- **CSS lint note** -- `line-clamp` needs both `-webkit-line-clamp` and standard `line-clamp` for compatibility. Both are present.
+## 7. Gotchas
 
-## 7. Relevant Artifacts / Links
+- **Electron launch quirk**: `npm start` must run from user's terminal. Spawning from subprocess doesn't always activate macOS window.
+- **Electron 41 is broken**: Pinned to v28. Do not upgrade.
+- **Browser preview vs Electron**: Preview server (port 5173, full browser height) makes layout look more spaced out than the actual 640px Electron window. Test in Electron for true proportions.
+- **Nura SVG dark ears**: Ear fill `#3A1A06` on `#0F0F10` background is low-contrast. Ear outline `#6B3418` makes them distinguishable. Don't darken further.
+- **Stats re-read**: Stats uses `key={statsKey}` in App.tsx — increments on every tab open to force remount + fresh storage read.
+- **alwaysOnTop dual storage**: Settings component writes to localStorage (`ff_settings`). IPC `setAlwaysOnTop` also writes to `userData/settings.json` for startup persistence. Both must stay in sync.
+- **Unsigned DMG**: macOS Gatekeeper shows "damaged" error. Users run `xattr -cr /Applications/Dopamine.app`.
+
+---
+
+## 8. Artifacts / Links
 
 | What | Path / URL |
-|------|-----------|
-| Main UI file | `index.html` (~3500 lines -- CSS + HTML + JS) |
-| Electron entry | `main.js` |
-| Preload script | `preload.js` |
-| Package config | `package.json` |
-| README | `README.md` |
-| App icon | `build/icon.icns` |
-| GIF demos | `assets/main.gif`, `assets/breathe-easy.gif`, `assets/customise.gif` |
-| Screenshots | `assets/screenshots/home-pomodoro.png`, `tasks-braindump.png`, `stats-buddy.png`, `settings.png` |
+|---|---|
+| Old monolith (backup) | `index.html.bak` |
+| React entry | `src/main.tsx` |
+| App shell | `src/App.tsx` |
+| Electron main | `main.js` |
+| IPC bridge | `preload.js` |
+| Design tokens | `src/styles/globals.css` + `tailwind.config.ts` |
 | GitHub repo | https://github.com/Oxymarun/dopamine |
+| Open PR | https://github.com/Oxymarun/dopamine/pull/1 |
 | Release v1.0.0 | https://github.com/Oxymarun/dopamine/releases/tag/v1.0.0 |
-| Git remote | `origin` -> `https://github.com/Oxymarun/dopamine.git` |
-
-### Key function locations in index.html
-| Function | Purpose |
-|----------|---------|
-| `completeTask()` :1884 | Marks task done/ge, triggers archive + XP |
-| `renderTasks()` :1754 | Renders active task list (filters done/ge) |
-| `renderHistory()` :2340 | Renders per-day history in Stats tab |
-| `findActiveTaskByText()` :1931 | Finds active task by text match (phantom fix) |
-| `markDoneActive()` :1939 | Marks current Focus task as done |
-| `toggleNura()` :3339 | Show/hide Nura companion |
-| `stuckTinyAction()` :2155 | Stuck flow -> add substep |
-| `snoozeTimer()` :1587 | +10 min snooze |
-| `stopYT()` :2942 | Stop YouTube audio |
-| `showTransition()` :3093 | Task transition ritual / empty board celebration |
-| `updateStats()` :2245 | Renders entire Stats tab including history |
-| `loadState()` :~1420 | Loads from localStorage with backfills + zombie cleanup |
+| Preview server | Port 5173 (Vite dev) |

@@ -1,0 +1,271 @@
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { storage, updateStreak } from '../lib/storage'
+import { buildTimerState, formatTime, ringProgress, TimerState } from '../lib/timer'
+import { playWorkComplete, playBreakComplete } from '../lib/sound'
+import { notify } from '../lib/notify'
+import Nura, { NuraMode, NuraRef } from './Nura'
+
+const MOODS = ['😶', '😐', '🙂', '😄', '🔥']
+const PRESETS = [15, 25, 45, 60]
+const RING_R = 54
+const RING_CIRC = 2 * Math.PI * RING_R
+
+interface FocusProps {
+  focusTask?: string
+  onSessionComplete?: () => void
+}
+
+export default function Focus({ focusTask, onSessionComplete }: FocusProps) {
+  const settings = storage.getSettings()
+  const rewards  = storage.getRewards()
+  const [task, setTask] = useState(focusTask ?? '')
+  const [mood, setMood] = useState(2)
+  const [state, setState] = useState<TimerState>(() =>
+    buildTimerState(settings.workMin, settings.breakMin, 'work')
+  )
+  const [nuraMode, setNuraMode] = useState<NuraMode>('idle')
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const nuraRef = useRef<NuraRef>(null)
+  const neglectTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    if (focusTask !== undefined) setTask(focusTask)
+  }, [focusTask])
+
+  const resetNeglect = useCallback(() => {
+    if (neglectTimer.current) clearTimeout(neglectTimer.current)
+    neglectTimer.current = setTimeout(() => {
+      setState(prev => {
+        if (prev.status !== 'running') setNuraMode('neglected')
+        return prev
+      })
+    }, 20 * 60 * 1000)
+  }, [])
+
+  useEffect(() => {
+    resetNeglect()
+    return () => { if (neglectTimer.current) clearTimeout(neglectTimer.current) }
+  }, [resetNeglect])
+
+  const clear = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
+    }
+  }, [])
+
+  const complete = useCallback((currentState: TimerState) => {
+    clear()
+    const cfg = storage.getSettings()
+
+    storage.addSession({
+      id: crypto.randomUUID(),
+      date: new Date().toISOString(),
+      type: currentState.mode,
+      durationMin: Math.round((currentState.total - currentState.remaining) / 60) || 1,
+      mood: MOODS[mood],
+    })
+
+    if (currentState.mode === 'work') updateStreak()
+    onSessionComplete?.()
+
+    if (cfg.soundEnabled) {
+      currentState.mode === 'work' ? playWorkComplete() : playBreakComplete()
+    }
+
+    notify(
+      currentState.mode === 'work' ? 'Work session done!' : 'Break over!',
+      currentState.mode === 'work' ? 'Time for a break.' : 'Back to work.'
+    )
+
+    setNuraMode('celebrate')
+    nuraRef.current?.celebrate()
+    setTimeout(() => {
+      const nextMode = currentState.mode === 'work' ? 'break' : 'work'
+      setNuraMode(nextMode === 'break' ? 'break' : 'idle')
+    }, 2500)
+
+    const nextMode = currentState.mode === 'work' ? 'break' : 'work'
+    const fresh = buildTimerState(cfg.workMin, cfg.breakMin, nextMode)
+    setState({
+      ...fresh,
+      sessions: currentState.sessions + (currentState.mode === 'work' ? 1 : 0),
+    })
+
+    resetNeglect()
+  }, [clear, mood, onSessionComplete, resetNeglect])
+
+  useEffect(() => {
+    if (state.status !== 'running') return
+    intervalRef.current = setInterval(() => {
+      setState(prev => {
+        if (prev.remaining <= 1) return { ...prev, remaining: 0, status: 'idle' }
+        return { ...prev, remaining: prev.remaining - 1 }
+      })
+    }, 1000)
+    return clear
+  }, [state.status, clear])
+
+  useEffect(() => {
+    if (state.status === 'idle' && state.remaining === 0 && state.total > 0) {
+      complete(state)
+    }
+  }, [state, complete])
+
+  function start() {
+    // zoomies — 1-in-20 chance
+    if (Math.random() < 0.05) {
+      const fn = (window as Window & { nuraZoomies?: () => void }).nuraZoomies
+      fn?.()
+    }
+    setNuraMode('focus')
+    resetNeglect()
+    setState(prev => ({ ...prev, status: 'running' }))
+  }
+
+  function pause() {
+    clear()
+    setNuraMode('idle')
+    setState(prev => ({ ...prev, status: 'paused' }))
+  }
+
+  function reset() {
+    clear()
+    setNuraMode('idle')
+    const cfg = storage.getSettings()
+    setState(prev => buildTimerState(cfg.workMin, cfg.breakMin, prev.mode))
+    resetNeglect()
+  }
+
+  function addTime(min: number) {
+    setState(prev => ({
+      ...prev,
+      remaining: prev.remaining + min * 60,
+      total: prev.total + min * 60,
+    }))
+  }
+
+  function setPreset(min: number) {
+    clear()
+    const cfg = storage.getSettings()
+    const total = min * 60
+    setState(prev => ({
+      ...buildTimerState(cfg.workMin, cfg.breakMin, prev.mode),
+      total,
+      remaining: total,
+      status: 'idle',
+    }))
+  }
+
+  function toggleMode() {
+    clear()
+    const cfg = storage.getSettings()
+    const nextMode = state.mode === 'work' ? 'break' : 'work'
+    setNuraMode('idle')
+    setState(buildTimerState(cfg.workMin, cfg.breakMin, nextMode))
+  }
+
+  const progress = ringProgress(state.remaining, state.total)
+  const dashoffset = RING_CIRC * (1 - progress)
+  const isWork = state.mode === 'work'
+
+  return (
+    <div className="flex-1 flex flex-col items-center px-4 pt-2 pb-3 gap-2 overflow-y-auto">
+
+      {/* Task input */}
+      <input
+        type="text"
+        value={task}
+        onChange={e => setTask(e.target.value)}
+        placeholder="What are you working on?"
+        className="w-full bg-surface border border-[var(--border)] rounded-btn px-3 py-1.5 text-[12px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent/50 transition-colors"
+      />
+
+      {/* Mode toggle */}
+      <div className="flex gap-1 bg-surface rounded-btn p-0.5 text-[11px] font-medium w-full">
+        <button
+          onClick={() => state.mode !== 'work' && toggleMode()}
+          className={`flex-1 py-0.5 rounded-[5px] transition-all ${isWork ? 'bg-surface-hover text-text-primary shadow-card' : 'text-text-muted'}`}
+        >
+          Work
+        </button>
+        <button
+          onClick={() => state.mode !== 'break' && toggleMode()}
+          className={`flex-1 py-0.5 rounded-[5px] transition-all ${!isWork ? 'bg-surface-hover text-text-primary shadow-card' : 'text-text-muted'}`}
+        >
+          Break
+        </button>
+      </div>
+
+      {/* Ring timer */}
+      <div className="relative flex items-center justify-center" style={{ width: 118, height: 118 }}>
+        <svg width="118" height="118" style={{ transform: 'rotate(-90deg)' }}>
+          <circle cx="59" cy="59" r={RING_R} fill="none" stroke="var(--surface)" strokeWidth="7" />
+          <circle
+            cx="59" cy="59" r={RING_R}
+            fill="none"
+            stroke={isWork ? 'var(--accent)' : 'var(--success)'}
+            strokeWidth="7"
+            strokeLinecap="round"
+            strokeDasharray={RING_CIRC}
+            strokeDashoffset={dashoffset}
+            style={{ transition: 'stroke-dashoffset 0.9s linear' }}
+          />
+        </svg>
+        <div className="absolute flex flex-col items-center">
+          <span className="text-[26px] font-bold tabular-nums text-text-primary leading-none">
+            {formatTime(state.remaining)}
+          </span>
+          <span className="text-[10px] text-text-muted mt-0.5">
+            {isWork ? `session ${state.sessions + 1}` : 'break time'}
+          </span>
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div className="flex items-center gap-2">
+        <button onClick={() => addTime(5)} className="text-[10px] text-text-muted hover:text-text-primary border border-[var(--border)] rounded-btn px-2 py-1 transition-colors">
+          +5m
+        </button>
+        {state.status === 'running' ? (
+          <button onClick={pause} className="px-5 py-1.5 rounded-btn text-[12px] font-semibold bg-surface-hover text-text-primary border border-[var(--border)] hover:border-accent/40 transition-all">
+            Pause
+          </button>
+        ) : (
+          <button onClick={start} className="px-5 py-1.5 rounded-btn text-[12px] font-semibold bg-accent text-white hover:brightness-110 transition-all">
+            {state.status === 'paused' ? 'Resume' : 'Start'}
+          </button>
+        )}
+        <button onClick={reset} className="text-[10px] text-text-muted hover:text-text-primary border border-[var(--border)] rounded-btn px-2 py-1 transition-colors">
+          Reset
+        </button>
+      </div>
+
+      {/* Presets + Mood on same row */}
+      <div className="flex items-center justify-between w-full px-1">
+        <div className="flex gap-1.5">
+          {PRESETS.map(p => (
+            <button key={p} onClick={() => setPreset(p)}
+              className="text-[10px] text-text-muted hover:text-text-primary bg-surface rounded-btn px-2 py-0.5 transition-colors">
+              {p}m
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-1.5">
+          {MOODS.map((m, i) => (
+            <button key={m} onClick={() => setMood(i)}
+              className={`text-[14px] transition-all ${i === mood ? 'scale-125' : 'opacity-35 hover:opacity-60'}`}>
+              {m}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Divider before Nura */}
+      <div className="w-full" style={{ height: '1px', background: 'var(--border)' }} />
+
+      {/* Nura */}
+      <Nura ref={nuraRef} mode={nuraMode} streak={rewards.streak} />
+    </div>
+  )
+}

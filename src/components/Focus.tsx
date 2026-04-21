@@ -13,13 +13,15 @@ const RING_CIRC = 2 * Math.PI * RING_R
 interface FocusProps {
   focusTask?: string
   onSessionComplete?: () => void
+  onFocusDone?: () => void
 }
 
-export default function Focus({ focusTask, onSessionComplete }: FocusProps) {
+export default function Focus({ focusTask, onSessionComplete, onFocusDone }: FocusProps) {
   const settings = storage.getSettings()
   const rewards  = storage.getRewards()
   const [task, setTask] = useState(focusTask ?? '')
   const [mood, setMood] = useState(2)
+  const [elapsed, setElapsed] = useState(0)
   const [state, setState] = useState<TimerState>(() =>
     buildTimerState(settings.workMin, settings.breakMin, 'work')
   )
@@ -56,6 +58,7 @@ export default function Focus({ focusTask, onSessionComplete }: FocusProps) {
 
   const complete = useCallback((currentState: TimerState) => {
     clear()
+    setElapsed(0)
     const cfg = storage.getSettings()
 
     storage.addSession({
@@ -102,6 +105,7 @@ export default function Focus({ focusTask, onSessionComplete }: FocusProps) {
         if (prev.remaining <= 1) return { ...prev, remaining: 0, status: 'idle' }
         return { ...prev, remaining: prev.remaining - 1 }
       })
+      setElapsed(prev => prev + 1)
     }, 1000)
     return clear
   }, [state.status, clear])
@@ -113,7 +117,7 @@ export default function Focus({ focusTask, onSessionComplete }: FocusProps) {
   }, [state, complete])
 
   function start() {
-    // zoomies — 1-in-20 chance
+    if (state.status === 'idle') setElapsed(0)
     if (Math.random() < 0.05) {
       const fn = (window as Window & { nuraZoomies?: () => void }).nuraZoomies
       fn?.()
@@ -131,6 +135,7 @@ export default function Focus({ focusTask, onSessionComplete }: FocusProps) {
 
   function reset() {
     clear()
+    setElapsed(0)
     setNuraMode('idle')
     const cfg = storage.getSettings()
     setState(prev => buildTimerState(cfg.workMin, cfg.breakMin, prev.mode))
@@ -147,6 +152,7 @@ export default function Focus({ focusTask, onSessionComplete }: FocusProps) {
 
   function setPreset(min: number) {
     clear()
+    setElapsed(0)
     const cfg = storage.getSettings()
     const total = min * 60
     setState(prev => ({
@@ -159,15 +165,27 @@ export default function Focus({ focusTask, onSessionComplete }: FocusProps) {
 
   function toggleMode() {
     clear()
+    setElapsed(0)
     const cfg = storage.getSettings()
     const nextMode = state.mode === 'work' ? 'break' : 'work'
     setNuraMode('idle')
     setState(buildTimerState(cfg.workMin, cfg.breakMin, nextMode))
   }
 
+  function handleDone() {
+    onFocusDone?.()
+    nuraRef.current?.celebrate()
+    setNuraMode('celebrate')
+    setTimeout(() => setNuraMode('idle'), 2500)
+  }
+
   const progress = ringProgress(state.remaining, state.total)
   const dashoffset = RING_CIRC * (1 - progress)
   const isWork = state.mode === 'work'
+  const isRunning = state.status === 'running'
+
+  const dotsInBlock = state.sessions % 4
+  const completedBlocks = Math.floor(state.sessions / 4)
 
   return (
     <div className="flex-1 flex flex-col items-center px-4 pt-2 pb-3 gap-2 overflow-y-auto">
@@ -201,16 +219,18 @@ export default function Focus({ focusTask, onSessionComplete }: FocusProps) {
       <div className="relative flex items-center justify-center" style={{ width: 118, height: 118 }}>
         <svg width="118" height="118" style={{ transform: 'rotate(-90deg)' }}>
           <circle cx="59" cy="59" r={RING_R} fill="none" stroke="var(--surface)" strokeWidth="7" />
-          <circle
-            cx="59" cy="59" r={RING_R}
-            fill="none"
-            stroke={isWork ? 'var(--accent)' : 'var(--success)'}
-            strokeWidth="7"
-            strokeLinecap="round"
-            strokeDasharray={RING_CIRC}
-            strokeDashoffset={dashoffset}
-            style={{ transition: 'stroke-dashoffset 0.9s linear' }}
-          />
+          <g style={{ filter: isRunning ? `drop-shadow(0 0 6px ${isWork ? 'var(--accent)' : 'var(--success)'})` : 'none' }}>
+            <circle
+              cx="59" cy="59" r={RING_R}
+              fill="none"
+              stroke={isWork ? 'var(--accent)' : 'var(--success)'}
+              strokeWidth="7"
+              strokeLinecap="round"
+              strokeDasharray={RING_CIRC}
+              strokeDashoffset={dashoffset}
+              style={{ transition: 'stroke-dashoffset 0.9s linear' }}
+            />
+          </g>
         </svg>
         <div className="absolute flex flex-col items-center">
           <span className="text-[26px] font-bold tabular-nums text-text-primary leading-none">
@@ -222,12 +242,30 @@ export default function Focus({ focusTask, onSessionComplete }: FocusProps) {
         </div>
       </div>
 
+      {/* Pomo dots + elapsed */}
+      <div className="flex flex-col items-center gap-0.5">
+        <div className="flex items-center gap-1.5">
+          {completedBlocks > 0 && (
+            <span className="text-[10px] text-text-muted mr-0.5">×{completedBlocks}</span>
+          )}
+          {[0, 1, 2, 3].map(i => (
+            <div
+              key={i}
+              className={`w-1.5 h-1.5 rounded-full transition-all ${i < dotsInBlock ? 'bg-success' : 'bg-surface-hover border border-[var(--border)]'}`}
+            />
+          ))}
+        </div>
+        {(isRunning || state.status === 'paused') && elapsed > 0 && (
+          <span className="text-[10px] text-text-muted">{formatTime(elapsed)} elapsed</span>
+        )}
+      </div>
+
       {/* Controls */}
       <div className="flex items-center gap-2">
         <button onClick={() => addTime(5)} className="text-[10px] text-text-muted hover:text-text-primary border border-[var(--border)] rounded-btn px-2 py-1 transition-colors">
           +5m
         </button>
-        {state.status === 'running' ? (
+        {isRunning ? (
           <button onClick={pause} className="px-5 py-1.5 rounded-btn text-[12px] font-semibold bg-surface-hover text-text-primary border border-[var(--border)] hover:border-accent/40 transition-all">
             Pause
           </button>
@@ -239,7 +277,30 @@ export default function Focus({ focusTask, onSessionComplete }: FocusProps) {
         <button onClick={reset} className="text-[10px] text-text-muted hover:text-text-primary border border-[var(--border)] rounded-btn px-2 py-1 transition-colors">
           Reset
         </button>
+        {isRunning && (
+          <button onClick={() => addTime(10)} className="text-[10px] text-text-muted hover:text-text-primary border border-[var(--border)] rounded-btn px-2 py-1 transition-colors">
+            Snooze
+          </button>
+        )}
       </div>
+
+      {/* Done / Good Enough */}
+      {task.trim() && (
+        <div className="flex gap-2 w-full">
+          <button
+            onClick={handleDone}
+            className="flex-1 py-1.5 rounded-btn text-[12px] font-medium bg-success/15 text-success border border-success/20 hover:bg-success/25 transition-all"
+          >
+            ✓ Done
+          </button>
+          <button
+            onClick={handleDone}
+            className="flex-1 py-1.5 rounded-btn text-[12px] font-medium bg-surface text-text-muted border border-[var(--border)] hover:text-text-primary transition-all"
+          >
+            Good Enough
+          </button>
+        </div>
+      )}
 
       {/* Presets + Mood on same row */}
       <div className="flex items-center justify-between w-full px-1">

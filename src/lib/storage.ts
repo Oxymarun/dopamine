@@ -1,8 +1,18 @@
+export type TaskEffort = 'tiny' | 'small' | 'med' | 'big'
+
 export interface Task {
   id: string
   text: string
   done: boolean
   steps: { id: string; text: string; done: boolean }[]
+  createdAt: number
+  effort?: TaskEffort
+  pinned?: boolean
+}
+
+export interface BrainDumpItem {
+  id: string
+  text: string
   createdAt: number
 }
 
@@ -35,6 +45,7 @@ const KEYS = {
   sessions: 'ff_sessions',
   settings: 'ff_settings',
   rewards: 'ff_rewards',
+  braindump: 'ff_braindump',
 }
 
 function get<T>(key: string, fallback: T): T {
@@ -81,6 +92,9 @@ export const storage = {
 
   getRewards: (): RewardState => ({ ...DEFAULT_REWARDS, ...get(KEYS.rewards, {}) }),
   setRewards: (r: RewardState) => set(KEYS.rewards, r),
+
+  getBrainDump: (): BrainDumpItem[] => get(KEYS.braindump, []),
+  setBrainDump: (items: BrainDumpItem[]) => set(KEYS.braindump, items),
 }
 
 const LEVEL_THRESHOLDS = [

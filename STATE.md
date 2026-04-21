@@ -134,20 +134,20 @@ focusflow-widget/
 
 ---
 
-### Not yet built (~60% of original features)
+### Not yet built (~45% of original features)
 
-**Focus tab gaps**
-- [ ] Pomo dots row (visual session counter below timer)
-- [ ] Session duration counter ("Session: 0:00" live elapsed)
-- [ ] "Done" button (marks current task complete from Focus tab)
-- [ ] "Good Enough" button (ADHD perfectionism interrupt)
-- [ ] Snooze button (appears while timer running, +10m)
-- [ ] Timer ring glow when running
+**Focus tab gaps** — all Phase 2 items done ✅
+- [x] Pomo dots row (visual session counter below timer)
+- [x] Session duration counter (live elapsed while running)
+- [x] "Done" button (marks focused task complete, triggers Nura celebrate)
+- [x] "Good Enough" button (same behavior — ADHD perfectionism interrupt)
+- [x] Snooze button (+10m, visible only when running)
+- [x] Timer ring glow (drop-shadow on progress arc when running)
 
-**Tasks tab gaps**
-- [ ] Task effort labels (⚡Tiny / 🔹Small / 🔷Med / 🔶Big)
-- [ ] Top 3 goals section
-- [ ] Brain dump inbox (quick capture, separate from tasks)
+**Tasks tab gaps** — all Phase 2 items done ✅
+- [x] Task effort labels (⚡Tiny / 🔹Small / 🔷Med / 🔶Big selector on add)
+- [x] Top 3 goals section (pin any task as goal, max 3, shown at top)
+- [x] Brain dump inbox (quick capture, separate list, promote to task)
 
 **Missing tabs / overlays**
 - [ ] Breathing exercise overlay (FAB)

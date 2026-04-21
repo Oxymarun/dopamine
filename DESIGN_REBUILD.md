@@ -86,22 +86,22 @@ Linear — dark, dense but breathable, single accent, strong hierarchy.
 
 Priority order for next session:
 
-#### High — Focus tab
-| Feature | Notes |
+#### High — Focus tab ✅ Done (Phase 2)
+| Feature | Status |
 |---|---|
-| Pomo dots row | Green dots below timer, one per completed session in current block |
-| Session duration counter | Live "Session: 0:00" elapsed time while running |
-| "Done" button | Marks current task complete from Focus tab, triggers Nura wiggle |
-| "Good Enough" button | ADHD perfectionism interrupt — same XP as Done |
-| Timer ring glow | `drop-shadow` filter on progress arc when running |
-| Snooze button | Appears while timer running, +10m, hides when paused |
+| Pomo dots row | ✅ 4-dot block, fills green per completed work session |
+| Session duration counter | ✅ formatTime(elapsed) shown when running/paused |
+| "Done" button | ✅ marks focusTask done in storage, resets input, Nura celebrate |
+| "Good Enough" button | ✅ same behavior as Done |
+| Timer ring glow | ✅ drop-shadow on progress `<g>` when running |
+| Snooze button | ✅ +10m, visible only when running |
 
-#### High — Tasks tab
-| Feature | Notes |
+#### High — Tasks tab ✅ Done (Phase 2)
+| Feature | Status |
 |---|---|
-| Brain dump inbox | Quick-capture input at bottom of Tasks, separate list from tasks |
-| Task effort labels | ⚡Tiny / 🔹Small / 🔷Med / 🔶Big selector on add |
-| Top 3 goals section | Pinned section at top of task list |
+| Brain dump inbox | ✅ separate list at bottom, promote-to-task button |
+| Task effort labels | ✅ 4-button selector (⚡🔹🔷🔶), chip shown on task row |
+| Top 3 goals section | ✅ Star pin button, max 3, Goals section at top |
 
 #### Medium — Overlays / FABs
 | Feature | Notes |

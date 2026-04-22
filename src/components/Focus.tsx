@@ -3,6 +3,7 @@ import { storage, updateStreak } from '../lib/storage'
 import { buildTimerState, formatTime, ringProgress, TimerState } from '../lib/timer'
 import { playWorkComplete, playBreakComplete } from '../lib/sound'
 import { notify } from '../lib/notify'
+import { toast } from '../lib/toast'
 import Nura, { NuraMode, NuraRef } from './Nura'
 import AmbientNoise from './AmbientNoise'
 import BreathingOverlay from './overlays/BreathingOverlay'
@@ -93,6 +94,10 @@ export default function Focus({ focusTask, onSessionComplete, onFocusDone }: Foc
     notify(
       currentState.mode === 'work' ? 'Work session done!' : 'Break over!',
       currentState.mode === 'work' ? 'Time for a break.' : 'Back to work.'
+    )
+    toast.show(
+      currentState.mode === 'work' ? 'Session complete! Take a break.' : 'Break over. Back to work!',
+      currentState.mode === 'work' ? 'success' : 'info'
     )
 
     setNuraMode('celebrate')

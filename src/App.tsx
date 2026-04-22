@@ -7,6 +7,7 @@ import Stats from './components/Stats'
 import Settings from './components/Settings'
 import { storage } from './lib/storage'
 import { requestPermission } from './lib/notify'
+import ToastContainer from './components/Toast'
 
 const TABS = [
   { id: 'focus',    label: 'Focus' },
@@ -53,7 +54,7 @@ export default function App() {
   }
 
   return (
-    <div className="w-full h-full flex flex-col bg-bg overflow-hidden rounded-xl">
+    <div className="w-full h-full flex flex-col bg-bg overflow-hidden rounded-xl relative">
       <TitleBar streak={rewards.streak} level={rewards.level} />
 
       <div
@@ -101,6 +102,7 @@ export default function App() {
           <Settings />
         </Tabs.Content>
       </Tabs.Root>
+      <ToastContainer />
     </div>
   )
 }

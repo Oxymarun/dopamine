@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { storage, Task, TaskEffort, BrainDumpItem } from '../lib/storage'
+import { toast } from '../lib/toast'
+import { triggerConfetti } from '../lib/confetti'
 import { Plus, Trash2, ChevronDown, ChevronRight, Crosshair, Star } from 'lucide-react'
 
 const EFFORT_OPTIONS: { key: TaskEffort; label: string }[] = [
@@ -41,7 +43,12 @@ export default function Tasks({ onFocusTask }: TasksProps) {
   }
 
   function toggleTask(id: string) {
+    const task = tasks.find(t => t.id === id)
     setTasks(prev => prev.map(t => t.id === id ? { ...t, done: !t.done, pinned: t.done ? t.pinned : false } : t))
+    if (task && !task.done) {
+      triggerConfetti()
+      toast.show(`Done: ${task.text.slice(0, 40)}${task.text.length > 40 ? '…' : ''}`, 'success')
+    }
   }
 
   function deleteTask(id: string) {

@@ -1,5 +1,5 @@
 # Dopamine — State Document
-**Last updated:** 2026-04-20
+**Last updated:** 2026-04-22
 **Version:** 2.0.0-wip (React rebuild in progress)
 
 ---
@@ -149,12 +149,12 @@ focusflow-widget/
 - [x] Top 3 goals section (pin any task as goal, max 3, shown at top)
 - [x] Brain dump inbox (quick capture, separate list, promote to task)
 
-**Missing tabs / overlays**
-- [ ] Breathing exercise overlay (FAB)
-- [ ] Brain dump overlay (FAB)
-- [ ] Stuck flow overlay (guided prompts + tiny action)
-- [ ] Hyperfocus alert (after long unbroken sessions)
-- [ ] One-thing overlay (full-screen focus on current task)
+**Missing tabs / overlays** — all Phase 3 items done ✅
+- [x] Breathing exercise overlay (FAB) — box breathing 4-4-4-4, animated ring + pulsing circle
+- [x] Stuck flow overlay (FAB) — 3-step guided prompts, auto-starts 5-min timer
+- [x] Hyperfocus alert — auto-triggers at 90min continuous work, offers break
+- [x] One-thing overlay (FAB) — full-widget focus on current task, Done/Keep going
+- [ ] Brain dump overlay (FAB) — quick capture outside of Tasks tab
 
 **Stats gaps**
 - [ ] Weekly bar charts (tasks / pomos / focus time)
@@ -163,7 +163,7 @@ focusflow-widget/
 - [ ] Wall of wins
 
 **Global missing**
-- [ ] Ambient noise bar (rain / brown noise / white noise / cafe + volume + YouTube)
+- [x] Ambient noise bar (rain / brown / white / cafe + volume — Web Audio API)
 - [ ] Confetti / FX canvas (on task complete, empty board)
 - [ ] Toast notifications (in-app)
 - [ ] Keyboard shortcuts (? to toggle help)
@@ -173,13 +173,18 @@ focusflow-widget/
 
 ## 5. Open Items / Next Actions
 
-- [ ] Continue React rebuild — next priority: Pomo dots + session duration + "Done"/"GE" buttons
-- [ ] Brain dump inbox in Tasks tab
-- [ ] Ambient noise bar (audio section at bottom of Focus)
-- [ ] Breathing overlay FAB
-- [ ] XP system + reward shop in Stats
-- [ ] Weekly bar charts in Stats
-- [ ] Confetti + toast system
+**Phase 4 — Stats depth + Polish (next session)**
+- [ ] Weekly bar charts in Stats (tasks / pomos / focus time)
+- [ ] XP bar with level progress in Stats
+- [ ] Reward shop (custom redeemable rewards) in Stats
+- [ ] Wall of wins in Stats
+- [ ] Confetti / FX canvas (task complete, empty board)
+- [ ] In-app toast notifications (replace any native alert/confirm usage)
+- [ ] Keyboard shortcuts (? to toggle help overlay)
+- [ ] Data export / import (JSON)
+- [ ] Brain dump overlay FAB (quick capture outside Tasks tab)
+
+**Ongoing**
 - [ ] Nura: body/tail visibility fix (dark saddle merges with ears visually)
 - [ ] Test full flow in Electron (not just browser preview)
 - [ ] Build + test DMG

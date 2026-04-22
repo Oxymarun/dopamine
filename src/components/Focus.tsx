@@ -4,11 +4,19 @@ import { buildTimerState, formatTime, ringProgress, TimerState } from '../lib/ti
 import { playWorkComplete, playBreakComplete } from '../lib/sound'
 import { notify } from '../lib/notify'
 import Nura, { NuraMode, NuraRef } from './Nura'
+import AmbientNoise from './AmbientNoise'
+import BreathingOverlay from './overlays/BreathingOverlay'
+import StuckOverlay from './overlays/StuckOverlay'
+import OneThingOverlay from './overlays/OneThingOverlay'
+import HyperfocusAlert from './overlays/HyperfocusAlert'
 
 const MOODS = ['😶', '😐', '🙂', '😄', '🔥']
 const PRESETS = [15, 25, 45, 60]
 const RING_R = 54
 const RING_CIRC = 2 * Math.PI * RING_R
+const HYPERFOCUS_MIN = 90
+
+type Overlay = 'breathing' | 'stuck' | 'onething' | 'hyperfocus' | null
 
 interface FocusProps {
   focusTask?: string
@@ -26,9 +34,13 @@ export default function Focus({ focusTask, onSessionComplete, onFocusDone }: Foc
     buildTimerState(settings.workMin, settings.breakMin, 'work')
   )
   const [nuraMode, setNuraMode] = useState<NuraMode>('idle')
+  const [overlay, setOverlay] = useState<Overlay>(null)
+  const [hyperfocusDismissed, setHyperfocusDismissed] = useState(false)
+
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const nuraRef = useRef<NuraRef>(null)
   const neglectTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const elapsedRef = useRef(0)
 
   useEffect(() => {
     if (focusTask !== undefined) setTask(focusTask)
@@ -59,6 +71,8 @@ export default function Focus({ focusTask, onSessionComplete, onFocusDone }: Foc
   const complete = useCallback((currentState: TimerState) => {
     clear()
     setElapsed(0)
+    elapsedRef.current = 0
+    setHyperfocusDismissed(false)
     const cfg = storage.getSettings()
 
     storage.addSession({
@@ -105,10 +119,23 @@ export default function Focus({ focusTask, onSessionComplete, onFocusDone }: Foc
         if (prev.remaining <= 1) return { ...prev, remaining: 0, status: 'idle' }
         return { ...prev, remaining: prev.remaining - 1 }
       })
-      setElapsed(prev => prev + 1)
+      setElapsed(prev => {
+        const next = prev + 1
+        elapsedRef.current = next
+        // Hyperfocus alert
+        if (
+          state.mode === 'work' &&
+          next > 0 &&
+          next % (HYPERFOCUS_MIN * 60) === 0 &&
+          !hyperfocusDismissed
+        ) {
+          setOverlay('hyperfocus')
+        }
+        return next
+      })
     }, 1000)
     return clear
-  }, [state.status, clear])
+  }, [state.status, state.mode, clear, hyperfocusDismissed])
 
   useEffect(() => {
     if (state.status === 'idle' && state.remaining === 0 && state.total > 0) {
@@ -136,6 +163,8 @@ export default function Focus({ focusTask, onSessionComplete, onFocusDone }: Foc
   function reset() {
     clear()
     setElapsed(0)
+    elapsedRef.current = 0
+    setHyperfocusDismissed(false)
     setNuraMode('idle')
     const cfg = storage.getSettings()
     setState(prev => buildTimerState(cfg.workMin, cfg.breakMin, prev.mode))
@@ -179,6 +208,24 @@ export default function Focus({ focusTask, onSessionComplete, onFocusDone }: Foc
     setTimeout(() => setNuraMode('idle'), 2500)
   }
 
+  // Stuck overlay → sets a 5-min timer
+  function handleStuckStartTimer() {
+    clear()
+    setElapsed(0)
+    const total = 5 * 60
+    setState(prev => ({ ...prev, total, remaining: total, status: 'running' }))
+    setNuraMode('focus')
+  }
+
+  // Hyperfocus → take break
+  function handleHyperfocusBreak() {
+    setOverlay(null)
+    pause()
+    const cfg = storage.getSettings()
+    setState(buildTimerState(cfg.workMin, cfg.breakMin, 'break'))
+    setNuraMode('break')
+  }
+
   const progress = ringProgress(state.remaining, state.total)
   const dashoffset = RING_CIRC * (1 - progress)
   const isWork = state.mode === 'work'
@@ -188,7 +235,32 @@ export default function Focus({ focusTask, onSessionComplete, onFocusDone }: Foc
   const completedBlocks = Math.floor(state.sessions / 4)
 
   return (
-    <div className="flex-1 flex flex-col items-center px-4 pt-2 pb-3 gap-2 overflow-y-auto">
+    <div className="flex-1 flex flex-col items-center px-4 pt-2 pb-3 gap-2 overflow-y-auto relative">
+
+      {/* Overlays */}
+      {overlay === 'breathing' && (
+        <BreathingOverlay onClose={() => setOverlay(null)} />
+      )}
+      {overlay === 'stuck' && (
+        <StuckOverlay
+          onClose={() => setOverlay(null)}
+          onStartTimer={handleStuckStartTimer}
+        />
+      )}
+      {overlay === 'onething' && (
+        <OneThingOverlay
+          task={task}
+          onClose={() => setOverlay(null)}
+          onDone={handleDone}
+        />
+      )}
+      {overlay === 'hyperfocus' && (
+        <HyperfocusAlert
+          minutesElapsed={Math.floor(elapsedRef.current / 60)}
+          onDismiss={() => { setOverlay(null); setHyperfocusDismissed(true) }}
+          onTakeBreak={handleHyperfocusBreak}
+        />
+      )}
 
       {/* Task input */}
       <input
@@ -327,6 +399,34 @@ export default function Focus({ focusTask, onSessionComplete, onFocusDone }: Foc
 
       {/* Nura */}
       <Nura ref={nuraRef} mode={nuraMode} streak={rewards.streak} />
+
+      {/* FABs */}
+      <div className="flex items-center gap-1.5 w-full justify-center mt-0.5">
+        <button
+          onClick={() => setOverlay('breathing')}
+          title="Breathing exercise"
+          className="text-[10px] text-text-muted hover:text-accent border border-[var(--border)] hover:border-accent/40 rounded-btn px-2.5 py-1 transition-all bg-surface"
+        >
+          🫁 Breathe
+        </button>
+        <button
+          onClick={() => setOverlay('stuck')}
+          title="Stuck flow"
+          className="text-[10px] text-text-muted hover:text-accent border border-[var(--border)] hover:border-accent/40 rounded-btn px-2.5 py-1 transition-all bg-surface"
+        >
+          🧱 Stuck
+        </button>
+        <button
+          onClick={() => setOverlay('onething')}
+          title="One thing focus"
+          className="text-[10px] text-text-muted hover:text-accent border border-[var(--border)] hover:border-accent/40 rounded-btn px-2.5 py-1 transition-all bg-surface"
+        >
+          🎯 One Thing
+        </button>
+      </div>
+
+      {/* Ambient noise */}
+      <AmbientNoise />
     </div>
   )
 }

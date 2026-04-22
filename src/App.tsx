@@ -7,6 +7,7 @@ import Stats from './components/Stats'
 import Settings from './components/Settings'
 import { storage } from './lib/storage'
 import { requestPermission } from './lib/notify'
+import ToastContainer from './components/Toast'
 
 const TABS = [
   { id: 'focus',    label: 'Focus' },
@@ -19,7 +20,9 @@ export default function App() {
   const [tab, setTab] = useState('focus')
   const [rewards, setRewards] = useState(() => storage.getRewards())
   const [focusTask, setFocusTask] = useState<string | undefined>(undefined)
+  const [focusTaskId, setFocusTaskId] = useState<string | undefined>(undefined)
   const [statsKey, setStatsKey] = useState(0)
+  const [tasksKey, setTasksKey] = useState(0)
 
   useEffect(() => {
     requestPermission()
@@ -29,10 +32,21 @@ export default function App() {
     setRewards(storage.getRewards())
   }, [])
 
-  const handleFocusTask = useCallback((text: string) => {
+  const handleFocusTask = useCallback((text: string, id: string) => {
     setFocusTask(text)
+    setFocusTaskId(id)
     setTab('focus')
   }, [])
+
+  const handleFocusDone = useCallback(() => {
+    if (focusTaskId) {
+      const tasks = storage.getTasks()
+      storage.setTasks(tasks.map(t => t.id === focusTaskId ? { ...t, done: true, pinned: false } : t))
+      setTasksKey(k => k + 1)
+    }
+    setFocusTask('')
+    setFocusTaskId(undefined)
+  }, [focusTaskId])
 
   function handleTabChange(next: string) {
     if (next === 'stats') setStatsKey(k => k + 1)
@@ -40,7 +54,7 @@ export default function App() {
   }
 
   return (
-    <div className="w-full h-full flex flex-col bg-bg overflow-hidden rounded-xl">
+    <div className="w-full h-full flex flex-col bg-bg overflow-hidden rounded-xl relative">
       <TitleBar streak={rewards.streak} level={rewards.level} />
 
       <div
@@ -72,10 +86,14 @@ export default function App() {
         </Tabs.List>
 
         <Tabs.Content value="focus" className="flex-1 flex flex-col overflow-hidden data-[state=inactive]:hidden">
-          <Focus focusTask={focusTask} onSessionComplete={handleSessionComplete} />
+          <Focus
+            focusTask={focusTask}
+            onSessionComplete={handleSessionComplete}
+            onFocusDone={handleFocusDone}
+          />
         </Tabs.Content>
         <Tabs.Content value="tasks" className="flex-1 flex flex-col overflow-hidden data-[state=inactive]:hidden">
-          <Tasks onFocusTask={handleFocusTask} />
+          <Tasks key={tasksKey} onFocusTask={handleFocusTask} />
         </Tabs.Content>
         <Tabs.Content value="stats" className="flex-1 flex flex-col overflow-hidden data-[state=inactive]:hidden">
           <Stats key={statsKey} />
@@ -84,6 +102,7 @@ export default function App() {
           <Settings />
         </Tabs.Content>
       </Tabs.Root>
+      <ToastContainer />
     </div>
   )
 }

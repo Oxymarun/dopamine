@@ -70,7 +70,7 @@ export default function Stats() {
   const maxFocus = Math.max(...focusByDay, 1)
 
   const xp = xpProgress(rewards.totalSessions)
-  const xpBalance = rewards.totalSessions - (rewards.xpSpent ?? 0)
+  const xpBalance = Math.max(0, rewards.totalSessions - (rewards.xpSpent ?? 0))
 
   function addReward() {
     if (!newRewardName.trim()) return
@@ -95,11 +95,13 @@ export default function Stats() {
   }
 
   function redeemReward(r: CustomReward) {
-    if (xpBalance < r.cost) {
-      toast.show(`Need ${r.cost} XP (have ${xpBalance})`, 'warning')
+    const current = storage.getRewards()
+    const balance = Math.max(0, current.totalSessions - (current.xpSpent ?? 0))
+    if (balance < r.cost) {
+      toast.show(`Need ${r.cost} XP (have ${balance})`, 'warning')
       return
     }
-    const updated = { ...rewards, xpSpent: (rewards.xpSpent ?? 0) + r.cost }
+    const updated = { ...current, xpSpent: (current.xpSpent ?? 0) + r.cost }
     storage.setRewards(updated)
     setRewards(updated)
     toast.show(`Redeemed: ${r.name}`, 'success')

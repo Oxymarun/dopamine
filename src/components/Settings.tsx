@@ -80,7 +80,7 @@ export default function Settings() {
                 a.href = url
                 a.download = `focusflow-backup-${new Date().toISOString().slice(0,10)}.json`
                 a.click()
-                URL.revokeObjectURL(url)
+                setTimeout(() => URL.revokeObjectURL(url), 1000)
                 toast.show('Data exported', 'success')
               }}
               className="flex-1 text-[11px] text-text-primary border border-[var(--border)] rounded-btn px-3 py-1.5 hover:bg-surface-hover transition-colors"

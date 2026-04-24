@@ -1,6 +1,6 @@
 {
   "name": "dopamine",
-  "version": "1.0.0",
+  "version": "2.0.0.0",
   "description": "ADHD Focus Widget for macOS",
   "main": "main.js",
   "author": "Arun Sharma",

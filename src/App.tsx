@@ -5,15 +5,23 @@ import Focus from './components/Focus'
 import Tasks from './components/Tasks'
 import Stats from './components/Stats'
 import Settings from './components/Settings'
+import BrainDumpOverlay from './components/overlays/BrainDumpOverlay'
 import { storage } from './lib/storage'
 import { requestPermission } from './lib/notify'
 import ToastContainer from './components/Toast'
+import { Brain, X } from 'lucide-react'
 
 const TABS = [
   { id: 'focus',    label: 'Focus' },
   { id: 'tasks',    label: 'Tasks' },
   { id: 'stats',    label: 'Stats' },
   { id: 'settings', label: 'Settings' },
+]
+
+const SHORTCUTS = [
+  { key: '?',      desc: 'Toggle this help' },
+  { key: 'B',      desc: 'Brain dump overlay' },
+  { key: 'Escape', desc: 'Close overlays' },
 ]
 
 export default function App() {
@@ -23,9 +31,31 @@ export default function App() {
   const [focusTaskId, setFocusTaskId] = useState<string | undefined>(undefined)
   const [statsKey, setStatsKey] = useState(0)
   const [tasksKey, setTasksKey] = useState(0)
+  const [showBrainDump, setShowBrainDump] = useState(false)
+  const [showHelp, setShowHelp] = useState(false)
 
   useEffect(() => {
     requestPermission()
+  }, [])
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const el = e.target as HTMLElement
+      if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable) return
+
+      if (e.key === '?') {
+        setShowHelp(h => !h)
+        setShowBrainDump(false)
+      } else if (e.key === 'b' || e.key === 'B') {
+        setShowBrainDump(d => !d)
+        setShowHelp(false)
+      } else if (e.key === 'Escape') {
+        setShowHelp(false)
+        setShowBrainDump(false)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
   }, [])
 
   const handleSessionComplete = useCallback(() => {
@@ -41,7 +71,11 @@ export default function App() {
   const handleFocusDone = useCallback(() => {
     if (focusTaskId) {
       const tasks = storage.getTasks()
-      storage.setTasks(tasks.map(t => t.id === focusTaskId ? { ...t, done: true, pinned: false } : t))
+      storage.setTasks(tasks.map(t =>
+        t.id === focusTaskId
+          ? { ...t, done: true, pinned: false, completedAt: Date.now() }
+          : t
+      ))
       setTasksKey(k => k + 1)
     }
     setFocusTask('')
@@ -102,6 +136,43 @@ export default function App() {
           <Settings />
         </Tabs.Content>
       </Tabs.Root>
+
+      {/* Brain dump FAB */}
+      {!showBrainDump && !showHelp && (
+        <button
+          onClick={() => setShowBrainDump(true)}
+          title="Brain dump (B)"
+          className="absolute bottom-4 right-4 w-8 h-8 rounded-full bg-surface border border-[var(--border)] flex items-center justify-center text-text-muted hover:text-accent hover:border-accent/40 transition-all shadow-card z-30"
+        >
+          <Brain size={14} />
+        </button>
+      )}
+
+      {/* Brain dump overlay */}
+      {showBrainDump && <BrainDumpOverlay onClose={() => setShowBrainDump(false)} />}
+
+      {/* Keyboard shortcuts help */}
+      {showHelp && (
+        <div className="absolute inset-0 z-40 flex items-center justify-center bg-bg/90 backdrop-blur-sm rounded-xl">
+          <div className="bg-surface border border-[var(--border)] rounded-btn px-5 py-4 w-52 shadow-card">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[12px] font-semibold text-text-primary">Shortcuts</p>
+              <button onClick={() => setShowHelp(false)} className="text-text-muted hover:text-text-primary transition-colors">
+                <X size={13} />
+              </button>
+            </div>
+            <div className="space-y-2">
+              {SHORTCUTS.map(s => (
+                <div key={s.key} className="flex items-center justify-between gap-3">
+                  <span className="text-[10px] text-text-primary">{s.desc}</span>
+                  <kbd className="text-[10px] bg-surface-hover border border-[var(--border)] rounded px-1.5 py-0.5 text-text-muted font-mono">{s.key}</kbd>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       <ToastContainer />
     </div>
   )

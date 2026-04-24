@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
-import { storage, Session } from '../lib/storage'
+import { storage, Session, Task, CustomReward } from '../lib/storage'
+import { toast } from '../lib/toast'
+import { Plus, Trash2, Gift } from 'lucide-react'
 
 const DAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 
@@ -46,10 +48,17 @@ function xpProgress(totalSessions: number): { pct: number; current: number; next
 export default function Stats() {
   const [sessions, setSessions] = useState<Session[]>(() => storage.getSessions())
   const [rewards, setRewards] = useState(() => storage.getRewards())
+  const [wins, setWins] = useState<Task[]>(() => storage.getTasks().filter(t => t.done))
+  const [shop, setShop] = useState<CustomReward[]>(() => storage.getShop())
+  const [newRewardName, setNewRewardName] = useState('')
+  const [newRewardCost, setNewRewardCost] = useState(5)
+  const [showAddReward, setShowAddReward] = useState(false)
 
   useEffect(() => {
     setSessions(storage.getSessions())
     setRewards(storage.getRewards())
+    setWins(storage.getTasks().filter(t => t.done))
+    setShop(storage.getShop())
   }, [])
 
   const dates = last7Dates()
@@ -61,6 +70,42 @@ export default function Stats() {
   const maxFocus = Math.max(...focusByDay, 1)
 
   const xp = xpProgress(rewards.totalSessions)
+  const xpBalance = Math.max(0, rewards.totalSessions - (rewards.xpSpent ?? 0))
+
+  function addReward() {
+    if (!newRewardName.trim()) return
+    const r: CustomReward = {
+      id: crypto.randomUUID(),
+      name: newRewardName.trim(),
+      cost: newRewardCost,
+      createdAt: Date.now(),
+    }
+    const next = [...shop, r]
+    setShop(next)
+    storage.setShop(next)
+    setNewRewardName('')
+    setNewRewardCost(5)
+    setShowAddReward(false)
+  }
+
+  function deleteReward(id: string) {
+    const next = shop.filter(r => r.id !== id)
+    setShop(next)
+    storage.setShop(next)
+  }
+
+  function redeemReward(r: CustomReward) {
+    const current = storage.getRewards()
+    const balance = Math.max(0, current.totalSessions - (current.xpSpent ?? 0))
+    if (balance < r.cost) {
+      toast.show(`Need ${r.cost} XP (have ${balance})`, 'warning')
+      return
+    }
+    const updated = { ...current, xpSpent: (current.xpSpent ?? 0) + r.cost }
+    storage.setRewards(updated)
+    setRewards(updated)
+    toast.show(`Redeemed: ${r.name}`, 'success')
+  }
 
   return (
     <div className="flex-1 flex flex-col px-3 py-2 gap-3 overflow-y-auto">
@@ -79,7 +124,10 @@ export default function Stats() {
             <p className="text-[10px] text-text-muted">Level</p>
             <p className="text-[14px] font-semibold text-accent">{rewards.level}</p>
           </div>
-          <p className="text-[11px] text-text-muted">{rewards.totalSessions} sessions</p>
+          <div className="text-right">
+            <p className="text-[11px] text-text-muted">{rewards.totalSessions} sessions</p>
+            <p className="text-[10px] text-text-muted">{xpBalance} XP available</p>
+          </div>
         </div>
         <div className="w-full h-1.5 bg-surface-hover rounded-full overflow-hidden">
           <div
@@ -113,7 +161,7 @@ export default function Stats() {
                     style={{
                       height: `${barH}%`,
                       minHeight: mins > 0 ? '4px' : '0',
-                      background: isToday ? 'var(--accent)' : 'var(--accent)',
+                      background: 'var(--accent)',
                       opacity: isToday ? 1 : 0.4,
                     }}
                   />
@@ -142,6 +190,93 @@ export default function Stats() {
               </div>
             )
           })}
+        </div>
+      </div>
+
+      {/* Reward shop */}
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <p className="text-[10px] text-text-muted">Reward shop</p>
+          <button
+            onClick={() => setShowAddReward(s => !s)}
+            className="text-[10px] text-accent hover:text-accent/80 transition-colors flex items-center gap-1"
+          >
+            <Plus size={10} /> Add
+          </button>
+        </div>
+
+        {showAddReward && (
+          <div className="bg-surface border border-[var(--border)] rounded-btn px-3 py-2 mb-2 space-y-2">
+            <input
+              autoFocus
+              value={newRewardName}
+              onChange={e => setNewRewardName(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') addReward() }}
+              placeholder="Reward name (e.g. Coffee break)"
+              className="w-full bg-surface-hover border border-[var(--border)] rounded-btn px-2.5 py-1.5 text-[11px] text-text-primary placeholder:text-text-muted outline-none focus:border-accent/60 transition-colors"
+            />
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-text-muted">Cost:</span>
+              <div className="flex items-center gap-1">
+                <button onClick={() => setNewRewardCost(c => Math.max(1, c - 1))} className="w-5 h-5 rounded bg-surface-hover text-text-muted hover:text-text-primary text-[12px] flex items-center justify-center">−</button>
+                <span className="text-[11px] text-text-primary w-5 text-center tabular-nums">{newRewardCost}</span>
+                <button onClick={() => setNewRewardCost(c => c + 1)} className="w-5 h-5 rounded bg-surface-hover text-text-muted hover:text-text-primary text-[12px] flex items-center justify-center">+</button>
+              </div>
+              <span className="text-[10px] text-text-muted">XP</span>
+              <button onClick={addReward} className="ml-auto text-[11px] bg-accent/20 border border-accent/30 text-accent rounded-btn px-2.5 py-1 hover:bg-accent/30 transition-colors">Save</button>
+            </div>
+          </div>
+        )}
+
+        {shop.length === 0 && !showAddReward && (
+          <p className="text-text-muted text-[11px] text-center py-2">No rewards yet. Add something worth working for.</p>
+        )}
+
+        <div className="space-y-1.5">
+          {shop.map(r => (
+            <div key={r.id} className="flex items-center gap-2 bg-surface border border-[var(--border)] rounded-btn px-3 py-2 group">
+              <Gift size={12} className="text-accent flex-shrink-0" />
+              <span className="flex-1 text-[12px] text-text-primary">{r.name}</span>
+              <span className="text-[10px] text-text-muted">{r.cost} XP</span>
+              <button
+                onClick={() => redeemReward(r)}
+                disabled={xpBalance < r.cost}
+                className="text-[10px] px-2 py-0.5 rounded-chip border transition-colors disabled:opacity-30 disabled:cursor-not-allowed border-accent/30 text-accent hover:bg-accent/10"
+              >
+                Redeem
+              </button>
+              <button
+                onClick={() => deleteReward(r.id)}
+                className="opacity-0 group-hover:opacity-100 transition-opacity text-text-muted hover:text-danger"
+              >
+                <Trash2 size={11} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Wall of wins */}
+      <div>
+        <p className="text-[10px] text-text-muted mb-1.5">Wall of wins</p>
+        {wins.length === 0 && (
+          <p className="text-text-muted text-[11px] text-center py-2">Complete tasks to see your wins here.</p>
+        )}
+        <div className="space-y-1">
+          {wins.slice(0, 20).map(t => (
+            <div key={t.id} className="flex items-start gap-2 bg-surface border border-[var(--border)] rounded-btn px-2.5 py-1.5">
+              <span className="text-[13px] mt-0.5">🏆</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] text-text-primary leading-snug truncate">{t.text}</p>
+                {t.completedAt && (
+                  <p className="text-[10px] text-text-muted">
+                    {new Date(t.completedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                  </p>
+                )}
+              </div>
+              {t.effort && <EffortBadge effort={t.effort} />}
+            </div>
+          ))}
         </div>
       </div>
 
@@ -185,4 +320,9 @@ function Chip({ label, value, color }: { label: string; value: string; color: st
       <p className="text-[13px] font-semibold" style={{ color }}>{value}</p>
     </div>
   )
+}
+
+function EffortBadge({ effort }: { effort: string }) {
+  const map: Record<string, string> = { tiny: '⚡', small: '🔹', med: '🔷', big: '🔶' }
+  return <span className="text-[11px] flex-shrink-0">{map[effort] ?? ''}</span>
 }

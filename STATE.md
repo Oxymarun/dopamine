@@ -1,5 +1,5 @@
 # Dopamine — State Document
-**Last updated:** 2026-04-22
+**Last updated:** 2026-04-24
 **Version:** 2.0.0-wip (React rebuild in progress)
 
 ---
@@ -154,41 +154,30 @@ focusflow-widget/
 - [x] Stuck flow overlay (FAB) — 3-step guided prompts, auto-starts 5-min timer
 - [x] Hyperfocus alert — auto-triggers at 90min continuous work, offers break
 - [x] One-thing overlay (FAB) — full-widget focus on current task, Done/Keep going
-- [ ] Brain dump overlay (FAB) — quick capture outside of Tasks tab
+- [x] Brain dump overlay (FAB) — quick capture outside of Tasks tab
 
-**Stats gaps**
-- [ ] Weekly bar charts (tasks / pomos / focus time)
-- [ ] XP bar with level progress
-- [ ] Reward shop (custom redeemable rewards)
-- [ ] Wall of wins
+**Stats gaps** — all Phase 4 items done ✅
+- [x] Weekly bar charts (tasks / pomos / focus time)
+- [x] XP bar with level progress
+- [x] Reward shop (custom redeemable rewards)
+- [x] Wall of wins
 
-**Global missing**
+**Global missing** — all Phase 4 items done ✅
 - [x] Ambient noise bar (rain / brown / white / cafe + volume — Web Audio API)
-- [ ] Confetti / FX canvas (on task complete, empty board)
-- [ ] Toast notifications (in-app)
-- [ ] Keyboard shortcuts (? to toggle help)
-- [ ] Data export / import
+- [x] Confetti / FX canvas (on task complete, empty board)
+- [x] Toast notifications (in-app)
+- [x] Keyboard shortcuts (? to toggle help)
+- [x] Data export / import (JSON)
 
 ---
 
 ## 5. Open Items / Next Actions
 
-**Phase 4 — Stats depth + Polish (next session)**
-- [ ] Weekly bar charts in Stats (tasks / pomos / focus time)
-- [ ] XP bar with level progress in Stats
-- [ ] Reward shop (custom redeemable rewards) in Stats
-- [ ] Wall of wins in Stats
-- [ ] Confetti / FX canvas (task complete, empty board)
-- [ ] In-app toast notifications (replace any native alert/confirm usage)
-- [ ] Keyboard shortcuts (? to toggle help overlay)
-- [ ] Data export / import (JSON)
-- [ ] Brain dump overlay FAB (quick capture outside Tasks tab)
-
-**Ongoing**
+**Remaining (post Phase 4)**
 - [ ] Nura: body/tail visibility fix (dark saddle merges with ears visually)
 - [ ] Test full flow in Electron (not just browser preview)
 - [ ] Build + test DMG
-- [ ] Merge PR #1 once feature-complete enough
+- [ ] Merge PR #1
 
 **PR:** https://github.com/Oxymarun/dopamine/pull/1 (feat/react-vite-rebuild → main)
 

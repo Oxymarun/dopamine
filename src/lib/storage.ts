@@ -6,8 +6,16 @@ export interface Task {
   done: boolean
   steps: { id: string; text: string; done: boolean }[]
   createdAt: number
+  completedAt?: number
   effort?: TaskEffort
   pinned?: boolean
+}
+
+export interface CustomReward {
+  id: string
+  name: string
+  cost: number
+  createdAt: number
 }
 
 export interface BrainDumpItem {
@@ -38,6 +46,7 @@ export interface RewardState {
   lastActiveDate: string
   totalSessions: number
   level: string
+  xpSpent: number
 }
 
 const KEYS = {
@@ -46,6 +55,7 @@ const KEYS = {
   settings: 'ff_settings',
   rewards: 'ff_rewards',
   braindump: 'ff_braindump',
+  shop: 'ff_shop',
 }
 
 function get<T>(key: string, fallback: T): T {
@@ -75,6 +85,7 @@ const DEFAULT_REWARDS: RewardState = {
   lastActiveDate: '',
   totalSessions: 0,
   level: 'Spark',
+  xpSpent: 0,
 }
 
 export const storage = {
@@ -95,6 +106,26 @@ export const storage = {
 
   getBrainDump: (): BrainDumpItem[] => get(KEYS.braindump, []),
   setBrainDump: (items: BrainDumpItem[]) => set(KEYS.braindump, items),
+
+  getShop: (): CustomReward[] => get(KEYS.shop, []),
+  setShop: (rewards: CustomReward[]) => set(KEYS.shop, rewards),
+
+  exportAll: () => {
+    const data: Record<string, unknown> = {}
+    Object.values(KEYS).forEach(k => {
+      try { data[k] = JSON.parse(localStorage.getItem(k) ?? 'null') } catch { data[k] = null }
+    })
+    return JSON.stringify(data, null, 2)
+  },
+
+  importAll: (json: string) => {
+    const data = JSON.parse(json) as Record<string, unknown>
+    Object.values(KEYS).forEach(k => {
+      if (data[k] !== undefined && data[k] !== null) {
+        localStorage.setItem(k, JSON.stringify(data[k]))
+      }
+    })
+  },
 }
 
 const LEVEL_THRESHOLDS = [
@@ -134,6 +165,7 @@ export function updateStreak(): RewardState {
     lastActiveDate: today,
     totalSessions,
     level: computeLevel(totalSessions),
+    xpSpent: r.xpSpent ?? 0,
   }
   storage.setRewards(next)
   return next

@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { storage, AppSettings } from '../lib/storage'
+import { toast } from '../lib/toast'
 
 const ACCENT_COLORS = [
   { label: 'Violet', value: '#7B61FF' },
@@ -11,6 +12,7 @@ const ACCENT_COLORS = [
 
 export default function Settings() {
   const [settings, setSettings] = useState<AppSettings>(() => storage.getSettings())
+  const importRef = useRef<HTMLInputElement>(null)
 
   function update(patch: Partial<AppSettings>) {
     const next = { ...settings, ...patch }
@@ -65,20 +67,68 @@ export default function Settings() {
         </Row>
       </Section>
 
-      {/* Reset data */}
+      {/* Data */}
       <Section label="Data">
-        <button
-          onClick={() => {
-            if (confirm('Clear all sessions and rewards? Tasks kept.')) {
-              localStorage.removeItem('ff_sessions')
-              localStorage.removeItem('ff_rewards')
-              window.location.reload()
-            }
-          }}
-          className="text-[11px] text-danger border border-danger/30 rounded-btn px-3 py-1.5 hover:bg-danger/10 transition-colors"
-        >
-          Clear session history
-        </button>
+        <div className="px-3 py-2 flex flex-col gap-2">
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                const json = storage.exportAll()
+                const blob = new Blob([json], { type: 'application/json' })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = `focusflow-backup-${new Date().toISOString().slice(0,10)}.json`
+                a.click()
+                setTimeout(() => URL.revokeObjectURL(url), 1000)
+                toast.show('Data exported', 'success')
+              }}
+              className="flex-1 text-[11px] text-text-primary border border-[var(--border)] rounded-btn px-3 py-1.5 hover:bg-surface-hover transition-colors"
+            >
+              Export JSON
+            </button>
+            <button
+              onClick={() => importRef.current?.click()}
+              className="flex-1 text-[11px] text-text-primary border border-[var(--border)] rounded-btn px-3 py-1.5 hover:bg-surface-hover transition-colors"
+            >
+              Import JSON
+            </button>
+            <input
+              ref={importRef}
+              type="file"
+              accept=".json"
+              className="hidden"
+              onChange={e => {
+                const file = e.target.files?.[0]
+                if (!file) return
+                const reader = new FileReader()
+                reader.onload = ev => {
+                  try {
+                    storage.importAll(ev.target!.result as string)
+                    toast.show('Data imported — reloading', 'success')
+                    setTimeout(() => window.location.reload(), 800)
+                  } catch {
+                    toast.show('Invalid backup file', 'warning')
+                  }
+                }
+                reader.readAsText(file)
+                e.target.value = ''
+              }}
+            />
+          </div>
+          <button
+            onClick={() => {
+              if (confirm('Clear all sessions and rewards? Tasks kept.')) {
+                localStorage.removeItem('ff_sessions')
+                localStorage.removeItem('ff_rewards')
+                window.location.reload()
+              }
+            }}
+            className="text-[11px] text-danger border border-danger/30 rounded-btn px-3 py-1.5 hover:bg-danger/10 transition-colors"
+          >
+            Clear session history
+          </button>
+        </div>
       </Section>
     </div>
   )

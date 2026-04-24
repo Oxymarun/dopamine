@@ -44,8 +44,12 @@ export default function Tasks({ onFocusTask }: TasksProps) {
 
   function toggleTask(id: string) {
     const task = tasks.find(t => t.id === id)
-    setTasks(prev => prev.map(t => t.id === id ? { ...t, done: !t.done, pinned: t.done ? t.pinned : false } : t))
-    if (task && !task.done) {
+    const nowDone = task && !task.done
+    setTasks(prev => prev.map(t => t.id === id
+      ? { ...t, done: !t.done, pinned: t.done ? t.pinned : false, completedAt: !t.done ? Date.now() : undefined }
+      : t
+    ))
+    if (nowDone) {
       triggerConfetti()
       toast.show(`Done: ${task.text.slice(0, 40)}${task.text.length > 40 ? '…' : ''}`, 'success')
     }

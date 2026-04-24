@@ -1,6 +1,6 @@
 # Dopamine — State Document
 **Last updated:** 2026-04-24
-**Version:** 2.0.0-wip (React rebuild in progress)
+**Version:** 2.0.0.0 — shipped ✅
 
 ---
 
@@ -177,9 +177,8 @@ focusflow-widget/
 - [ ] Nura: body/tail visibility fix (dark saddle merges with ears visually)
 - [ ] Test full flow in Electron (not just browser preview)
 - [ ] Build + test DMG
-- [ ] Merge PR #1
 
-**PR:** https://github.com/Oxymarun/dopamine/pull/1 (feat/react-vite-rebuild → main)
+**Status:** v2.0.0.0 merged to main — https://github.com/Oxymarun/dopamine/pull/3
 
 ---
 
